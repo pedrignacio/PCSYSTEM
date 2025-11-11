@@ -9,7 +9,7 @@ export default function Hero() {
   return (
     <section id="inicio" className="min-h-screen flex items-center justify-center relative overflow-hidden pt-20">
       {/* Background Gradient */}
-      <div className="absolute inset-0 bg-linear-to-br from-blue-600/20 via-dark-900 to-dark-900" />
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-dark-900 to-dark-900" />
       
       {/* Animated Circles */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
