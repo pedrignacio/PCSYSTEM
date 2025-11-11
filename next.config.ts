@@ -6,7 +6,8 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  distDir: '.',
+  basePath: '/PCSYSTEM',
+  assetPrefix: '/PCSYSTEM/',
 };
 
 export default nextConfig;
