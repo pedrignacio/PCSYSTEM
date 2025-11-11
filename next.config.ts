@@ -6,11 +6,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  basePath: process.env.NODE_ENV === 'production' ? '/PCSYSTEM' : '',
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/PCSYSTEM/' : '',
-  turbopack: {
-    root: process.cwd(),
-  },
+  distDir: '.',
 };
 
 export default nextConfig;
