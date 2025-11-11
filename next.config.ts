@@ -1,10 +1,14 @@
 import type { NextConfig } from "next";
 
+const isProduction = process.env.NODE_ENV === 'production';
+const isGitHubPages = process.env.GITHUB_PAGES === 'true';
+
 const nextConfig: NextConfig = {
-  output: 'export',
+  // Solo usar export para GitHub Pages, standalone para Render
+  output: isGitHubPages ? 'export' : 'standalone',
   trailingSlash: true,
   images: {
-    unoptimized: true,
+    unoptimized: isGitHubPages,
     remotePatterns: [
       {
         protocol: 'https',
@@ -12,8 +16,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Solo usar basePath en producción
-  ...(process.env.NODE_ENV === 'production' && {
+  // Solo usar basePath para GitHub Pages
+  ...(isGitHubPages && {
     basePath: '/PCSYSTEM',
     assetPrefix: '/PCSYSTEM/',
   }),

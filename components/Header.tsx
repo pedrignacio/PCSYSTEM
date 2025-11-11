@@ -26,9 +26,7 @@ export default function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center">
           <Image
-            src={`${
-              process.env.NODE_ENV === "production" ? "/PCSYSTEM" : ""
-            }/logo-header.png`}
+            src="/logo-header.png"
             alt="PCSystem - Ciber y Servicio Técnico"
             width={180}
             height={60}

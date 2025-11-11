@@ -111,13 +111,6 @@ export default function AdminPage() {
       textColor: "text-green-600",
     },
     {
-      icon: <FiUsers />,
-      label: "Clientes Activos",
-      value: "142",
-      bgColor: "bg-purple-50",
-      textColor: "text-purple-600",
-    },
-    {
       icon: <FiDollarSign />,
       label: "Ingresos del Mes",
       value: "$2.4M",
@@ -260,7 +253,7 @@ export default function AdminPage() {
           </AnimatePresence>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {stats.map((stat, idx) => (
               <motion.div
                 key={idx}
