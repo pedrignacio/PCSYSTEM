@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   --color-primary-50: #e6f7ff;
@@ -24,7 +22,7 @@
   }
 }
 
-.some-selector {
+* {
   border-color: rgb(55 65 81);
 }
 
