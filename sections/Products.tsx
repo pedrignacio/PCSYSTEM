@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { 
   FiCpu, 
   FiMonitor, 
@@ -14,6 +15,7 @@ import {
 } from "react-icons/fi";
 import { IoGameController } from "react-icons/io5";
 import { MdToys } from "react-icons/md";
+import { products as allProducts } from "@/data/products";
 
 const categories = [
   { id: "all", name: "Todos", icon: <FiCpu /> },
@@ -26,225 +28,11 @@ const categories = [
   { id: "security", name: "Seguridad", icon: <FiCamera /> },
 ];
 
-const products = [
-  // Componentes PC
-  {
-    id: 1,
-    name: "Procesador Intel Core i5-12400F",
-    category: "components",
-    price: 120000,
-    image: "https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=500&q=80",
-    description: "Procesador de 6 núcleos y 12 hilos, ideal para gaming y productividad",
-    stock: true
-  },
-  {
-    id: 2,
-    name: "Tarjeta Gráfica RTX 3060 12GB",
-    category: "components",
-    price: 350000,
-    image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?w=500&q=80",
-    description: "GPU para gaming en 1080p/1440p con Ray Tracing",
-    stock: true
-  },
-  {
-    id: 3,
-    name: "Memoria RAM DDR4 16GB 3200MHz",
-    category: "components",
-    price: 45000,
-    image: "https://images.unsplash.com/photo-1562976540-1502c2145186?w=500&q=80",
-    description: "Kit 2x8GB para rendimiento óptimo",
-    stock: true
-  },
-  {
-    id: 4,
-    name: "Placa Madre B550M",
-    category: "components",
-    price: 95000,
-    image: "https://images.unsplash.com/photo-1587202372634-32705e3bf49c?w=500&q=80",
-    description: "Placa madre AMD con soporte PCIe 4.0",
-    stock: true
-  },
-  
-  // Periféricos
-  {
-    id: 5,
-    name: "Monitor Gaming 24\" 144Hz",
-    category: "peripherals",
-    price: 180000,
-    image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500&q=80",
-    description: "Panel IPS, 1ms de respuesta, FreeSync",
-    stock: true
-  },
-  {
-    id: 6,
-    name: "Teclado Mecánico RGB",
-    category: "peripherals",
-    price: 65000,
-    image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&q=80",
-    description: "Switch Blue, retroiluminación RGB personalizable",
-    stock: true
-  },
-  {
-    id: 7,
-    name: "Mouse Gaming RGB 12000 DPI",
-    category: "peripherals",
-    price: 35000,
-    image: "https://images.unsplash.com/photo-1527814050087-3793815479db?w=500&q=80",
-    description: "Sensor óptico de alta precisión",
-    stock: true
-  },
-  {
-    id: 8,
-    name: "Webcam Full HD 1080p",
-    category: "peripherals",
-    price: 42000,
-    image: "https://images.unsplash.com/photo-1593508512255-86ab42a8e620?w=500&q=80",
-    description: "Ideal para streaming y videollamadas",
-    stock: true
-  },
-
-  // Gaming
-  {
-    id: 9,
-    name: "Control PlayStation 5 DualSense",
-    category: "gaming",
-    price: 65000,
-    image: "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=500&q=80",
-    description: "Control inalámbrico con retroalimentación háptica",
-    stock: true
-  },
-  {
-    id: 10,
-    name: "Auriculares Gaming 7.1",
-    category: "gaming",
-    price: 55000,
-    image: "https://images.unsplash.com/photo-1599669454699-248893623440?w=500&q=80",
-    description: "Sonido surround, micrófono extraíble",
-    stock: true
-  },
-  {
-    id: 11,
-    name: "Silla Gaming Ergonómica",
-    category: "gaming",
-    price: 185000,
-    image: "https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=500&q=80",
-    description: "Respaldo reclinable, soporte lumbar ajustable",
-    stock: true
-  },
-
-  // Almacenamiento
-  {
-    id: 12,
-    name: "SSD NVMe 500GB",
-    category: "storage",
-    price: 48000,
-    image: "https://images.unsplash.com/photo-1531492746076-161ca9bcad58?w=500&q=80",
-    description: "Velocidad de lectura hasta 3500 MB/s",
-    stock: true
-  },
-  {
-    id: 13,
-    name: "Disco Duro Externo 2TB",
-    category: "storage",
-    price: 75000,
-    image: "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=500&q=80",
-    description: "USB 3.0, portátil y compacto",
-    stock: true
-  },
-  {
-    id: 14,
-    name: "Pendrive USB 3.0 64GB",
-    category: "storage",
-    price: 12000,
-    image: "https://images.unsplash.com/photo-1624823183493-ed5832f48f18?w=500&q=80",
-    description: "Alta velocidad de transferencia",
-    stock: true
-  },
-
-  // Accesorios
-  {
-    id: 15,
-    name: "Cable HDMI 2.1 2m",
-    category: "accessories",
-    price: 8000,
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&q=80",
-    description: "Soporte 4K@120Hz, 8K@60Hz",
-    stock: true
-  },
-  {
-    id: 16,
-    name: "Hub USB-C 7 en 1",
-    category: "accessories",
-    price: 32000,
-    image: "https://images.unsplash.com/photo-1625948515291-69613efd103f?w=500&q=80",
-    description: "HDMI, USB 3.0, lector SD, carga rápida",
-    stock: true
-  },
-  {
-    id: 17,
-    name: "Pasta Térmica Premium",
-    category: "accessories",
-    price: 8500,
-    image: "https://images.unsplash.com/photo-1563206767-5b18f218e8de?w=500&q=80",
-    description: "Alta conductividad térmica",
-    stock: true
-  },
-
-  // Anime/Coleccionables
-  {
-    id: 18,
-    name: "Figura Naruto Shippuden",
-    category: "anime",
-    price: 25000,
-    image: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=500&q=80",
-    description: "Figura articulada de 15cm",
-    stock: true
-  },
-  {
-    id: 19,
-    name: "Poster Dragon Ball Z",
-    category: "anime",
-    price: 5000,
-    image: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=500&q=80",
-    description: "Tamaño A2, alta calidad",
-    stock: true
-  },
-  {
-    id: 20,
-    name: "Taza Attack on Titan",
-    category: "anime",
-    price: 8000,
-    image: "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=500&q=80",
-    description: "Cerámica de alta calidad, 350ml",
-    stock: true
-  },
-
-  // Seguridad
-  {
-    id: 21,
-    name: "Cámara IP WiFi Full HD",
-    category: "security",
-    price: 45000,
-    image: "https://images.unsplash.com/photo-1557324232-b8917d3c3dcb?w=500&q=80",
-    description: "Visión nocturna, detección de movimiento",
-    stock: true
-  },
-  {
-    id: 22,
-    name: "Kit 4 Cámaras Seguridad + DVR",
-    category: "security",
-    price: 220000,
-    image: "https://images.unsplash.com/photo-1558002038-1055907df827?w=500&q=80",
-    description: "Sistema completo con grabación",
-    stock: true
-  },
-];
-
 export default function Products() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredProducts = products.filter(product => {
+  const filteredProducts = allProducts.filter(product => {
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -321,67 +109,71 @@ export default function Products() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
           {filteredProducts.length > 0 ? (
             filteredProducts.map((product, index) => (
-              <motion.div
+              <Link
                 key={product.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: index * 0.05 }}
-                whileHover={{ y: -12, scale: 1.03 }}
-                className="group"
+                href={`/productos/${product.id}`}
               >
-                <div className="bg-gradient-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden h-full hover:border-primary-400 hover:shadow-2xl hover:shadow-primary-500/30 transition-all duration-300 flex flex-col">
-                  {/* Product Image */}
-                  <div className="relative h-48 bg-gradient-to-br from-primary-600/20 via-dark-700 to-purple-600/20 overflow-hidden">
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    />
-                    {/* Overlay gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-dark-900/60 to-transparent"></div>
-                    {/* Glow effect on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-primary-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    
-                    {/* Stock Badge */}
-                    {product.stock && (
-                      <div className="absolute top-3 right-3 bg-gradient-to-r from-primary-500 to-blue-500 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-lg shadow-primary-500/50 z-10">
-                        ✓ En Stock
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Product Info */}
-                  <div className="p-5 bg-gradient-to-b from-transparent to-dark-900/30 flex flex-col flex-grow">
-                    <h3 className="text-lg font-bold mb-2 text-white group-hover:text-primary-300 transition-colors line-clamp-2">
-                      {product.name}
-                    </h3>
-                    
-                    <p className="text-gray-300 text-sm mb-4 line-clamp-2">
-                      {product.description}
-                    </p>
-
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-2xl font-bold bg-gradient-to-r from-primary-400 to-primary-300 bg-clip-text text-transparent">
-                        {formatPrice(product.price)}
-                      </span>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                  whileHover={{ y: -12, scale: 1.03 }}
+                  className="group cursor-pointer"
+                >
+                  <div className="bg-gradient-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden h-full hover:border-primary-400 hover:shadow-2xl hover:shadow-primary-500/30 transition-all duration-300 flex flex-col">
+                    {/* Product Image */}
+                    <div className="relative h-48 bg-gradient-to-br from-primary-600/20 via-dark-700 to-purple-600/20 overflow-hidden">
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      />
+                      {/* Overlay gradient */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-dark-900/60 to-transparent"></div>
+                      {/* Glow effect on hover */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-primary-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      
+                      {/* Stock Badge */}
+                      {product.stock && (
+                        <div className="absolute top-3 right-3 bg-gradient-to-r from-primary-500 to-blue-500 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-lg shadow-primary-500/50 z-10">
+                          ✓ En Stock
+                        </div>
+                      )}
                     </div>
 
-                    {/* CTA Button */}
-                    <button
-                      onClick={() => {
-                        // Aquí puedes agregar la lógica del carrito
-                        alert(`${product.name} agregado al carrito`);
-                      }}
-                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-4 py-2.5 rounded-lg transition-all duration-300 font-semibold shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60 hover:scale-105 mt-auto"
-                    >
-                      <FiShoppingCart />
-                      Agregar al Carrito
-                    </button>
+                    {/* Product Info */}
+                    <div className="p-5 bg-gradient-to-b from-transparent to-dark-900/30 flex flex-col flex-grow">
+                      <h3 className="text-lg font-bold mb-2 text-white group-hover:text-primary-300 transition-colors line-clamp-2">
+                        {product.name}
+                      </h3>
+                      
+                      <p className="text-gray-300 text-sm mb-4 line-clamp-2">
+                        {product.description}
+                      </p>
+
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-2xl font-bold bg-gradient-to-r from-primary-400 to-primary-300 bg-clip-text text-transparent">
+                          {formatPrice(product.price)}
+                        </span>
+                      </div>
+
+                      {/* CTA Button */}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          alert(`${product.name} agregado al carrito`);
+                        }}
+                        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-4 py-2.5 rounded-lg transition-all duration-300 font-semibold shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60 hover:scale-105 mt-auto"
+                      >
+                        <FiShoppingCart />
+                        Agregar al Carrito
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </Link>
             ))
           ) : (
             <motion.div
