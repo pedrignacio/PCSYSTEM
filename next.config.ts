@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   images: {
     unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+    ],
   },
   // Solo usar basePath en producción
   ...(process.env.NODE_ENV === 'production' && {
