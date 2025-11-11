@@ -1,7 +1,4 @@
 @import "tailwindcss";
-@import "tailwindcss/preflight";
-@tailwind utilities;
-@tailwind utilities;
 
 :root {
   --color-primary-50: #e6f7ff;
@@ -10,7 +7,7 @@
   --color-primary-500: #1890ff;
   --color-primary-600: #096dd9;
   --color-primary-700: #0050b3;
-  
+
   --color-dark-900: #0a0e27;
   --color-dark-800: #151b38;
   --color-dark-700: #1f2847;
@@ -32,23 +29,4 @@
 body {
   background-color: var(--color-dark-900);
   color: white;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-img {
-  image-rendering: -webkit-optimize-contrast;
-}
-
-.gpu-accelerated {
-  transform: translateZ(0);
-  will-change: transform;
-}
-
-@media print {
-  .no-print {
-    display: none !important;
-  }
 }

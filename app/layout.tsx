@@ -1,6 +1,6 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Analytics } from "@vercel/analytics/react";
+// import { Analytics } from "@vercel/analytics/react"; ← COMENTAR ESTA LÍNEA
 import WhatsAppWidget from "@/components/WhatsAppWidget";
 
 // Optimizar fuente
@@ -101,7 +101,7 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans bg-dark-900 text-white antialiased`}>
         {children}
         <WhatsAppWidget />
-        <Analytics />
+        {/* <Analytics /> ← COMENTAR ESTA LÍNEA */}
       </body>
     </html>
   );
