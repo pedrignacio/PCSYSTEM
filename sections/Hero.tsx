@@ -25,7 +25,7 @@ export default function Hero() {
             className="mb-8"
           >
             <Image
-              src="/logo-hero.png"
+              src={`${process.env.NODE_ENV === 'production' ? '/PCSYSTEM' : ''}/logo-hero.png`}
               alt="PCSystem Logo"
               width={200}
               height={200}
