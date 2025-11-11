@@ -3,11 +3,10 @@ const nextConfig = {
   output: 'export',
   trailingSlash: true,
   images: {
-    unoptimized: true,
+    unoptimized: true
   },
-  experimental: {
-    cssChunking: 'strict',
-  },
+  basePath: '/PCSYSTEM',
+  assetPrefix: '/PCSYSTEM/',
 }
 
 export default nextConfig;
