@@ -53,7 +53,7 @@ export default function Footer() {
             {/* Social Links */}
             <div className="flex space-x-4">
               <a
-                href="https://facebook.com/CiberHualpen"
+                href="https://www.facebook.com/pcsystems.hualpen"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-dark-800 hover:bg-blue-600 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110"
@@ -61,7 +61,7 @@ export default function Footer() {
                 <FaFacebook className="text-gray-400 hover:text-white" />
               </a>
               <a
-                href="https://instagram.com/pcsystems.cl"
+                href="https://www.instagram.com/pcsystems.cl"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-dark-800 hover:bg-pink-600 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110"

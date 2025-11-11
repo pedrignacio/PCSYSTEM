@@ -5,8 +5,10 @@ import { FiMapPin, FiClock, FiNavigation, FiPhone } from "react-icons/fi";
 
 export default function Location() {
   const address = "Pasaje 7 #2609 La Floresta 3, Hualpén";
-  const googleMapsUrl = `https://www.google.com/maps?q=${encodeURIComponent(address)}`;
-  const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(address)}`;
+  const coordinates = "-36.7943695,-73.1098199";
+  const googleMapsUrl = `https://www.google.com/maps?q=${coordinates}`;
+  const wazeUrl = `https://waze.com/ul?ll=${coordinates}`;
+  const appleMapsUrl = "https://maps.apple.com/place?map=explore&place-id=I97984AB46E13C750&address=Pasaje+7+2609%2C+Hualp%C3%A9n%2C+Chile&coordinate=-36.7943695%2C-73.1098199&name=Pcsystems+Ciber+Hualpen&_provider=9902";
 
   return (
     <section id="ubicacion" className="py-20 px-4 relative overflow-hidden">
@@ -42,7 +44,7 @@ export default function Location() {
           >
             <div className="bg-dark-800/50 backdrop-blur-sm border border-dark-700 rounded-2xl p-4 h-96 lg:h-[500px]">
               <iframe
-                src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dOWTgAKwdM3mxU&q=${encodeURIComponent(address)}`}
+                src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3168.123456789!2d-73.1098199!3d-36.7943695!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzbCsDQ3JzM5LjciUyA3M8KwMDYnMzUuNCJX!5e0!3m2!1ses!2scl!4v1234567890`}
                 width="100%"
                 height="100%"
                 style={{ border: 0, borderRadius: '16px' }}
@@ -88,6 +90,15 @@ export default function Location() {
                 >
                   <FiNavigation />
                   <span>Abrir en Google Maps</span>
+                </a>
+                <a
+                  href={appleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center space-x-2 bg-gray-600 hover:bg-gray-700 px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105"
+                >
+                  <FiNavigation />
+                  <span>Abrir en Apple Maps</span>
                 </a>
                 <a
                   href={wazeUrl}
