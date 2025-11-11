@@ -7,11 +7,12 @@ import Link from "next/link";
 import Image from "next/image";
 
 const navItems = [
-  { name: "Inicio", href: "#inicio" },
-  { name: "Servicios", href: "#servicios" },
-  { name: "Nosotros", href: "#nosotros" },
-  { name: "Ubicación", href: "#ubicacion" },
-  { name: "Contacto", href: "#contacto" },
+  { name: "Inicio", href: "/" },
+  { name: "Productos", href: "/productos" },
+  { name: "Servicios", href: "/#servicios" },
+  { name: "Nosotros", href: "/#nosotros" },
+  { name: "Ubicación", href: "/#ubicacion" },
+  { name: "Contacto", href: "/#contacto" },
 ];
 
 export default function Header() {
