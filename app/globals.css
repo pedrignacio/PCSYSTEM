@@ -1,47 +1,32 @@
 @import "tailwindcss";
 
-@layer base {
-  * {
-    @apply border-gray-700;
-  }
-  body {
-    @apply bg-dark-900 text-white;
-  }
+:root {
+  --color-primary-50: #e6f7ff;
+  --color-primary-100: #bae7ff;
+  --color-primary-400: #40a9ff;
+  --color-primary-500: #1890ff;
+  --color-primary-600: #096dd9;
+  --color-primary-700: #0050b3;
+  
+  --color-dark-900: #0a0e27;
+  --color-dark-800: #151b38;
+  --color-dark-700: #1f2847;
 }
 
 @layer utilities {
   .text-gradient {
-    @apply bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent;
-  }@import "tailwindcss";
+    background: linear-gradient(to right, var(--color-primary-400), var(--color-primary-600));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
 
-  @theme {
-    --color-primary-50: #e6f7ff;
-    --color-primary-100: #bae7ff;
-    --color-primary-400: #40a9ff;
-    --color-primary-500: #1890ff;
-    --color-primary-600: #096dd9;
-    --color-primary-700: #0050b3;
-    
-    --color-dark-900: #0a0e27;
-    --color-dark-800: #151b38;
-    --color-dark-700: #1f2847;
-  }
-  
-  @layer utilities {
-    .text-gradient {
-      background: linear-gradient(to right, var(--color-primary-400), var(--color-primary-600));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-  }
-  
-  * {
-    border-color: rgb(55 65 81);
-  }
-  
-  body {
-    background-color: var(--color-dark-900);
-    color: white;
-  }
+* {
+  border-color: rgb(55 65 81);
+}
+
+body {
+  background-color: var(--color-dark-900);
+  color: white;
 }

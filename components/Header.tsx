@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiMenu, FiX, FiPhone } from "react-icons/fi";
 import Link from "next/link";
+import Image from "next/image";
 
 const navItems = [
   { name: "Inicio", href: "#inicio" },
@@ -17,14 +18,18 @@ export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-dark-800/80 backdrop-blur-md border-b border-dark-700">
-      <nav className="container mx-auto px-4 py-4 flex items-center justify-between">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-dark-800/90 backdrop-blur-md border-b border-dark-700">
+      <nav className="container mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center space-x-2">
-          <div className="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center">
-            <span className="text-xl font-bold">PC</span>
-          </div>
-          <span className="text-xl font-bold text-gradient">PCSystem</span>
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/logo-header.png"
+            alt="PCSystem - Ciber y Servicio Técnico"
+            width={180}
+            height={60}
+            className="h-12 w-auto object-contain"
+            priority
+          />
         </Link>
 
         {/* Desktop Navigation */}
@@ -33,7 +38,7 @@ export default function Header() {
             <li key={item.name}>
               <Link
                 href={item.href}
-                className="text-gray-300 hover:text-primary-400 transition-colors duration-200"
+                className="text-gray-300 hover:text-primary-400 transition-colors duration-200 font-medium"
               >
                 {item.name}
               </Link>
@@ -43,13 +48,13 @@ export default function Header() {
 
         {/* CTA Button Desktop */}
         <a
-          href="https://wa.me/56912345678"
+          href="https://wa.me/56989142836"
           target="_blank"
           rel="noopener noreferrer"
-          className="hidden md:flex items-center space-x-2 bg-primary-500 hover:bg-primary-600 px-5 py-2.5 rounded-lg transition-colors duration-200"
+          className="hidden md:flex items-center space-x-2 bg-green-600 hover:bg-green-700 px-5 py-2.5 rounded-lg transition-colors duration-200 font-semibold"
         >
           <FiPhone />
-          <span>Contactar</span>
+          <span>WhatsApp</span>
         </a>
 
         {/* Mobile Menu Button */}
@@ -77,7 +82,7 @@ export default function Header() {
                   <Link
                     href={item.href}
                     onClick={() => setIsOpen(false)}
-                    className="block text-gray-300 hover:text-primary-400 transition-colors duration-200"
+                    className="block text-gray-300 hover:text-primary-400 transition-colors duration-200 py-2"
                   >
                     {item.name}
                   </Link>
@@ -85,10 +90,10 @@ export default function Header() {
               ))}
               <li>
                 <a
-                  href="https://wa.me/56912345678"
+                  href="https://wa.me/56989142836"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center space-x-2 bg-primary-500 hover:bg-primary-600 px-5 py-2.5 rounded-lg transition-colors duration-200"
+                  className="flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700 px-5 py-3 rounded-lg transition-colors duration-200 mt-4"
                 >
                   <FiPhone />
                   <span>Contactar por WhatsApp</span>
