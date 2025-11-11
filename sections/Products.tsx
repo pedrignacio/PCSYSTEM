@@ -9,7 +9,8 @@ import {
   FiHeadphones, 
   FiSmartphone,
   FiHardDrive,
-  FiCamera
+  FiCamera,
+  FiShoppingCart
 } from "react-icons/fi";
 import { IoGameController } from "react-icons/io5";
 import { MdToys } from "react-icons/md";
@@ -368,15 +369,16 @@ export default function Products() {
                     </div>
 
                     {/* CTA Button */}
-                    <a
-                      href={`https://wa.me/56989142836?text=Hola!%20Me%20interesa%20el%20producto:%20${encodeURIComponent(product.name)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={() => {
+                        // Aquí puedes agregar la lógica del carrito
+                        alert(`${product.name} agregado al carrito`);
+                      }}
                       className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-4 py-2.5 rounded-lg transition-all duration-300 font-semibold shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60 hover:scale-105 mt-auto"
                     >
-                      <FiSmartphone />
-                      Consultar
-                    </a>
+                      <FiShoppingCart />
+                      Agregar al Carrito
+                    </button>
                   </div>
                 </div>
               </motion.div>
