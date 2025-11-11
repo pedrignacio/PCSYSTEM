@@ -1,5 +1,8 @@
 import Header from "@/components/Header";
 import Hero from "@/sections/Hero";
+import Services from "@/sections/Services";
+import Contact from "@/sections/Contact";
+import Location from "@/sections/Location";
 
 export default function Home() {
   return (
@@ -7,7 +10,9 @@ export default function Home() {
       <Header />
       <main>
         <Hero />
-        {/* Aquí irán las demás secciones: Servicios, Nosotros, Contacto, etc. */}
+        <Services />
+        <Contact />
+        <Location />
       </main>
     </>
   );
