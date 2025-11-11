@@ -6,8 +6,11 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  basePath: '/PCSYSTEM',
-  assetPrefix: '/PCSYSTEM/',
+  // Solo usar basePath en producción
+  ...(process.env.NODE_ENV === 'production' && {
+    basePath: '/PCSYSTEM',
+    assetPrefix: '/PCSYSTEM/',
+  }),
 };
 
 export default nextConfig;
