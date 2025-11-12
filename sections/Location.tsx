@@ -14,6 +14,7 @@ export default function Location() {
   const [distance, setDistance] = useState<string | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   // Calcular distancia entre dos coordenadas (fórmula de Haversine)
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -109,7 +110,41 @@ export default function Location() {
             transition={{ duration: 0.6 }}
             className="relative"
           >
-            <div className="bg-dark-800/50 backdrop-blur-sm border border-dark-700 rounded-2xl p-4 h-96 lg:h-[500px]">
+            <div className="bg-dark-800/50 backdrop-blur-sm border border-dark-700 rounded-2xl p-4 h-96 lg:h-[500px] relative overflow-hidden">
+              {/* Skeleton Loader para el mapa */}
+              {!mapLoaded && (
+                <div className="absolute inset-4 rounded-2xl overflow-hidden z-10">
+                  <div className="absolute inset-0 bg-gradient-to-br from-dark-700 via-dark-600 to-dark-700 animate-pulse">
+                    {/* Elementos decorativos del skeleton */}
+                    <div className="absolute top-4 left-4 w-32 h-8 bg-dark-500/50 rounded animate-pulse" />
+                    <div className="absolute bottom-4 right-4 w-24 h-24 bg-dark-500/50 rounded-lg animate-pulse" />
+                    
+                    {/* Pin de ubicación animado */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+                      <motion.div
+                        animate={{
+                          y: [0, -10, 0],
+                          scale: [1, 1.1, 1],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      >
+                        <FiMapPin className="text-6xl text-primary-500/50" />
+                      </motion.div>
+                      <div className="mt-2 text-sm text-gray-400 animate-pulse">Cargando mapa...</div>
+                    </div>
+
+                    {/* Shimmer effect */}
+                    <div className="absolute inset-0 overflow-hidden">
+                      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <iframe
                 src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3175.5!2d-73.09!3d-36.783!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzbCsDQ2JzU4LjgiUyA3M8KwMDUnMjQuMCJX!5e0!3m2!1ses!2scl!4v1234567890`}
                 width="100%"
@@ -118,8 +153,9 @@ export default function Location() {
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                className="rounded-xl"
+                className={`rounded-xl transition-opacity duration-500 ${mapLoaded ? 'opacity-100' : 'opacity-0'}`}
                 title="Ubicación PCSystem"
+                onLoad={() => setMapLoaded(true)}
               />
             </div>
           </motion.div>
