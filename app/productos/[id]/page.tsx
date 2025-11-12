@@ -24,6 +24,7 @@ import {
   FiAward,
 } from "react-icons/fi";
 import { getProductById, getRelatedProducts } from "@/data/products";
+import Script from "next/script";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -104,8 +105,47 @@ export default function ProductDetailPage() {
     setSelectedImage((prev) => (prev - 1 + product.images.length) % product.images.length);
   };
 
+  // JSON-LD structured data para SEO
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": product.name,
+    "image": product.images || [product.image],
+    "description": product.longDescription || product.description,
+    "sku": `PCSYS-${product.id}`,
+    "brand": {
+      "@type": "Brand",
+      "name": "PCSystem"
+    },
+    "offers": {
+      "@type": "Offer",
+      "url": `https://pcsystem.cl/productos/${product.id}`,
+      "priceCurrency": "CLP",
+      "price": product.price,
+      "itemCondition": "https://schema.org/NewCondition",
+      "availability": product.stock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "seller": {
+        "@type": "Organization",
+        "name": "PCSystem Hualpén"
+      }
+    },
+    "aggregateRating": product.rating ? {
+      "@type": "AggregateRating",
+      "ratingValue": product.rating,
+      "reviewCount": product.reviews || 0,
+      "bestRating": "5",
+      "worstRating": "1"
+    } : undefined,
+    "category": product.category,
+  };
+
   return (
     <>
+      <Script
+        id="product-json-ld"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       <Header />
       <main className="min-h-screen pt-24 pb-20 px-4 bg-gradient-to-br from-dark-900 via-dark-900 to-primary-900/20">
         {/* Background Elements */}
