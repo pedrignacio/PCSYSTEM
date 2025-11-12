@@ -595,8 +595,9 @@ export default function AdminPage() {
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.9, y: 20 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+                className="bg-white rounded-2xl shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col"
               >
+                {/* Header */}
                 <div className="sticky top-0 bg-white border-b-2 border-gray-200 p-6 flex items-center justify-between z-10">
                   <h3 className="text-2xl font-bold text-gray-900">
                     {editingProduct ? "Editar Producto" : "Agregar Nuevo Producto"}
@@ -609,7 +610,11 @@ export default function AdminPage() {
                   </button>
                 </div>
 
-                <div className="p-6 space-y-6">
+                {/* Content with Grid Layout */}
+                <div className="flex-1 overflow-y-auto">
+                  <div className="grid lg:grid-cols-2 gap-6 p-6">
+                    {/* Left Column - Form */}
+                    <div className="space-y-6">
                   {/* Basic Info */}
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
@@ -822,6 +827,113 @@ export default function AdminPage() {
                     >
                       Cancelar
                     </motion.button>
+                  </div>
+                    </div>
+
+                    {/* Right Column - Preview */}
+                    <div className="hidden lg:block sticky top-0 h-fit">
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border-2 border-gray-200">
+                        <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                          <FiPackage className="text-blue-600" />
+                          Vista Previa
+                        </h4>
+                        
+                        {/* Product Card Preview */}
+                        <div className="bg-white rounded-xl overflow-hidden shadow-lg border-2 border-gray-200 hover:shadow-xl transition-all">
+                          {/* Image */}
+                          <div className="relative h-56 bg-gray-100 flex items-center justify-center overflow-hidden">
+                            {productForm.image ? (
+                              <Image
+                                src={productForm.image}
+                                alt={productForm.name || "Vista previa"}
+                                width={300}
+                                height={300}
+                                className="object-contain w-full h-full p-4"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.parentElement!.innerHTML = '<div class="text-gray-400 text-center p-8"><svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><p>Imagen no válida</p></div>';
+                                }}
+                              />
+                            ) : (
+                              <div className="text-gray-400 text-center p-8">
+                                <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <p className="text-sm">Sin imagen</p>
+                              </div>
+                            )}
+                            {productForm.stock && productForm.stockQuantity! > 0 ? (
+                              <span className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                                En Stock
+                              </span>
+                            ) : (
+                              <span className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                                Sin Stock
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Content */}
+                          <div className="p-5">
+                            {/* Category Badge */}
+                            <div className="mb-2">
+                              <span className="inline-block px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold">
+                                {categories.find(c => c.id === productForm.category)?.name || 'Categoría'}
+                              </span>
+                            </div>
+
+                            {/* Product Name */}
+                            <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 min-h-[3.5rem]">
+                              {productForm.name || 'Nombre del producto'}
+                            </h3>
+
+                            {/* Description */}
+                            <p className="text-gray-600 text-sm mb-4 line-clamp-2 min-h-[2.5rem]">
+                              {productForm.description || 'Descripción del producto'}
+                            </p>
+
+                            {/* Price */}
+                            <div className="flex items-baseline gap-2 mb-4">
+                              <span className="text-2xl font-bold text-blue-600">
+                                ${productForm.price?.toLocaleString('es-CL') || '0'}
+                              </span>
+                              <span className="text-sm text-gray-500">CLP</span>
+                            </div>
+
+                            {/* Tags */}
+                            {productForm.tags && productForm.tags.length > 0 && productForm.tags[0] !== '' && (
+                              <div className="flex flex-wrap gap-1 mb-4">
+                                {productForm.tags.slice(0, 3).map((tag, idx) => (
+                                  tag && (
+                                    <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                      {tag}
+                                    </span>
+                                  )
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Stock Info */}
+                            <div className="text-sm text-gray-500 mb-3">
+                              Stock: <span className="font-semibold text-gray-700">{productForm.stockQuantity || 0} unidades</span>
+                            </div>
+
+                            {/* Button */}
+                            <button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-2 rounded-lg font-semibold hover:shadow-lg transition-all cursor-not-allowed opacity-75">
+                              Ver Detalles
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Preview Info */}
+                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <p className="text-xs text-blue-700 flex items-start gap-2">
+                            <span className="mt-0.5">💡</span>
+                            <span>Esta es una vista previa de cómo se verá tu producto en la tienda. Los cambios se reflejan en tiempo real.</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </motion.div>
