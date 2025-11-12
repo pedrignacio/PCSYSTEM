@@ -182,8 +182,25 @@ export default function ProductDetailPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
             >
-              {/* Main Image */}
-              <div className="relative aspect-square bg-gradient-to-br from-dark-800 via-dark-700 to-primary-900/30 rounded-2xl overflow-hidden mb-4 border-2 border-primary-500/30 group">
+              {/* Main Image - Swipeable */}
+              <motion.div 
+                className="relative aspect-square bg-gradient-to-br from-dark-800 via-dark-700 to-primary-900/30 rounded-2xl overflow-hidden mb-4 border-2 border-primary-500/30 group touch-pan-y"
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.2}
+                onDragEnd={(e, { offset, velocity }) => {
+                  const swipe = Math.abs(offset.x) * velocity.x;
+                  
+                  // Swipe left (next image)
+                  if (swipe < -500) {
+                    nextImage();
+                  }
+                  // Swipe right (previous image)
+                  else if (swipe > 500) {
+                    prevImage();
+                  }
+                }}
+              >
                 {/* Skeleton Loader */}
                 {imageLoading && (
                   <div className="absolute inset-0 z-10">
@@ -204,20 +221,21 @@ export default function ProductDetailPage() {
                   className={`object-cover transition-all duration-500 group-hover:scale-105 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
                   priority
                   onLoad={() => setImageLoading(false)}
+                  draggable={false}
                 />
                 
-                {/* Navigation Arrows */}
+                {/* Navigation Arrows - Hidden on mobile, visible on hover desktop */}
                 {product.images.length > 1 && (
                   <>
                     <button
                       onClick={prevImage}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-dark-900/80 backdrop-blur-sm border border-primary-500/50 flex items-center justify-center text-white hover:bg-primary-500 transition-all opacity-0 group-hover:opacity-100 z-20"
+                      className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-dark-900/80 backdrop-blur-sm border border-primary-500/50 items-center justify-center text-white hover:bg-primary-500 transition-all opacity-0 group-hover:opacity-100 z-20"
                     >
                       <FiChevronLeft className="text-2xl" />
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-dark-900/80 backdrop-blur-sm border border-primary-500/50 flex items-center justify-center text-white hover:bg-primary-500 transition-all opacity-0 group-hover:opacity-100 z-20"
+                      className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-dark-900/80 backdrop-blur-sm border border-primary-500/50 items-center justify-center text-white hover:bg-primary-500 transition-all opacity-0 group-hover:opacity-100 z-20"
                     >
                       <FiChevronRight className="text-2xl" />
                     </button>
@@ -236,10 +254,22 @@ export default function ProductDetailPage() {
                 )}
                 
                 {/* Image Counter */}
-                <div className="absolute bottom-4 right-4 bg-dark-900/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-semibold border border-primary-500/30">
+                <div className="absolute bottom-4 right-4 bg-dark-900/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-semibold border border-primary-500/30 z-10">
                   {selectedImage + 1} / {product.images.length}
                 </div>
-              </div>
+
+                {/* Swipe Indicator (Mobile only) */}
+                <motion.div 
+                  initial={{ opacity: 1 }}
+                  animate={{ opacity: 0 }}
+                  transition={{ delay: 2, duration: 1 }}
+                  className="md:hidden absolute bottom-20 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-dark-900/90 backdrop-blur-sm px-4 py-2 rounded-full text-xs text-gray-300 border border-primary-500/30 z-10"
+                >
+                  <FiChevronLeft className="text-primary-400" />
+                  <span>Desliza para ver más</span>
+                  <FiChevronRight className="text-primary-400" />
+                </motion.div>
+              </motion.div>
 
               {/* Thumbnail Gallery */}
               <div className="grid grid-cols-4 gap-3">

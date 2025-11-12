@@ -26,7 +26,7 @@ export default function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center">
           <Image
-            src="/logo-header.png"
+            src="/logo-hero.png"
             alt="PCSystem - Ciber y Servicio Técnico"
             width={180}
             height={60}
