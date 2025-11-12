@@ -118,11 +118,11 @@ export default function Products() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.4, delay: index * 0.05 }}
                   whileHover={{ y: -12, scale: 1.03 }}
-                  className="group cursor-pointer"
+                  className="group cursor-pointer h-full"
                 >
                   <div className="bg-gradient-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden h-full hover:border-primary-400 hover:shadow-2xl hover:shadow-primary-500/30 transition-all duration-300 flex flex-col">
                     {/* Product Image */}
-                    <div className="relative h-36 md:h-48 bg-gradient-to-br from-primary-600/20 via-dark-700 to-purple-600/20 overflow-hidden">
+                    <div className="relative h-36 md:h-48 flex-shrink-0 bg-gradient-to-br from-primary-600/20 via-dark-700 to-purple-600/20 overflow-hidden">
                       <Image
                         src={product.image}
                         alt={product.name}
@@ -145,21 +145,24 @@ export default function Products() {
 
                     {/* Product Info */}
                     <div className="p-3 md:p-5 bg-gradient-to-b from-transparent to-dark-900/30 flex flex-col flex-grow">
-                      <h3 className="text-sm md:text-lg font-bold mb-1 md:mb-2 text-white group-hover:text-primary-300 transition-colors line-clamp-2 leading-tight">
+                      {/* Título con altura mínima fija */}
+                      <h3 className="text-sm md:text-lg font-bold mb-1 md:mb-2 text-white group-hover:text-primary-300 transition-colors line-clamp-2 leading-tight h-[2.5rem] md:h-[3.5rem]">
                         {product.name}
                       </h3>
                       
-                      <p className="hidden md:block text-gray-300 text-sm mb-4 line-clamp-2">
+                      {/* Descripción con altura mínima fija (solo desktop) */}
+                      <p className="hidden md:block text-gray-300 text-sm mb-4 line-clamp-2 h-[2.5rem]">
                         {product.description}
                       </p>
 
+                      {/* Precio */}
                       <div className="flex items-center justify-between mb-2 md:mb-4">
                         <span className="text-lg md:text-2xl font-bold bg-gradient-to-r from-primary-400 to-primary-300 bg-clip-text text-transparent">
                           {formatPrice(product.price)}
                         </span>
                       </div>
 
-                      {/* CTA Button */}
+                      {/* CTA Button - mt-auto lo empuja al final */}
                       <button
                         onClick={(e) => {
                           e.preventDefault();
