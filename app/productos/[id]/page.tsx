@@ -37,6 +37,8 @@ export default function ProductDetailPage() {
   const [activeTab, setActiveTab] = useState<"description" | "specs" | "reviews">("description");
   const [isFavorite, setIsFavorite] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+  const [thumbnailsLoading, setThumbnailsLoading] = useState<{[key: number]: boolean}>({});
 
   if (!product) {
     return (
@@ -98,10 +100,12 @@ export default function ProductDetailPage() {
   };
 
   const nextImage = () => {
+    setImageLoading(true);
     setSelectedImage((prev) => (prev + 1) % product.images.length);
   };
 
   const prevImage = () => {
+    setImageLoading(true);
     setSelectedImage((prev) => (prev - 1 + product.images.length) % product.images.length);
   };
 
@@ -180,12 +184,26 @@ export default function ProductDetailPage() {
             >
               {/* Main Image */}
               <div className="relative aspect-square bg-gradient-to-br from-dark-800 via-dark-700 to-primary-900/30 rounded-2xl overflow-hidden mb-4 border-2 border-primary-500/30 group">
+                {/* Skeleton Loader */}
+                {imageLoading && (
+                  <div className="absolute inset-0 z-10">
+                    <div className="absolute inset-0 bg-gradient-to-r from-dark-700 via-dark-600 to-dark-700 animate-pulse">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-purple-500/20 animate-pulse" />
+                    </div>
+                    {/* Shimmer effect */}
+                    <div className="absolute inset-0 overflow-hidden">
+                      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+                    </div>
+                  </div>
+                )}
+                
                 <Image
                   src={product.images[selectedImage]}
                   alt={product.name}
                   fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  className={`object-cover transition-all duration-500 group-hover:scale-105 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
                   priority
+                  onLoad={() => setImageLoading(false)}
                 />
                 
                 {/* Navigation Arrows */}
@@ -193,13 +211,13 @@ export default function ProductDetailPage() {
                   <>
                     <button
                       onClick={prevImage}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-dark-900/80 backdrop-blur-sm border border-primary-500/50 flex items-center justify-center text-white hover:bg-primary-500 transition-all opacity-0 group-hover:opacity-100"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-dark-900/80 backdrop-blur-sm border border-primary-500/50 flex items-center justify-center text-white hover:bg-primary-500 transition-all opacity-0 group-hover:opacity-100 z-20"
                     >
                       <FiChevronLeft className="text-2xl" />
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-dark-900/80 backdrop-blur-sm border border-primary-500/50 flex items-center justify-center text-white hover:bg-primary-500 transition-all opacity-0 group-hover:opacity-100"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-dark-900/80 backdrop-blur-sm border border-primary-500/50 flex items-center justify-center text-white hover:bg-primary-500 transition-all opacity-0 group-hover:opacity-100 z-20"
                     >
                       <FiChevronRight className="text-2xl" />
                     </button>
@@ -228,7 +246,10 @@ export default function ProductDetailPage() {
                 {product.images.map((img, idx) => (
                   <motion.button
                     key={idx}
-                    onClick={() => setSelectedImage(idx)}
+                    onClick={() => {
+                      setImageLoading(true);
+                      setSelectedImage(idx);
+                    }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
@@ -237,9 +258,21 @@ export default function ProductDetailPage() {
                         : "border-dark-700 hover:border-primary-500/50"
                     }`}
                   >
-                    <Image src={img} alt={`${product.name} ${idx + 1}`} fill className="object-cover" />
+                    {/* Thumbnail Skeleton */}
+                    {thumbnailsLoading[idx] !== false && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-dark-700 via-dark-600 to-dark-700 animate-pulse" />
+                    )}
+                    
+                    <Image 
+                      src={img} 
+                      alt={`${product.name} ${idx + 1}`} 
+                      fill 
+                      className={`object-cover transition-opacity duration-300 ${thumbnailsLoading[idx] !== false ? 'opacity-0' : 'opacity-100'}`}
+                      onLoad={() => setThumbnailsLoading(prev => ({ ...prev, [idx]: false }))}
+                    />
+                    
                     {selectedImage === idx && (
-                      <div className="absolute inset-0 bg-primary-500/20 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-primary-500/20 flex items-center justify-center z-10">
                         <FiCheck className="text-2xl text-white" />
                       </div>
                     )}

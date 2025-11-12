@@ -123,21 +123,29 @@ export default function Products() {
                   <div className="bg-gradient-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden h-full hover:border-primary-400 hover:shadow-2xl hover:shadow-primary-500/30 transition-all duration-300 flex flex-col">
                     {/* Product Image */}
                     <div className="relative h-36 md:h-48 flex-shrink-0 bg-gradient-to-br from-primary-600/20 via-dark-700 to-purple-600/20 overflow-hidden">
+                      {/* Skeleton Loader */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-dark-700 via-dark-600 to-dark-700 animate-pulse" />
+                      
                       <Image
                         src={product.image}
                         alt={product.name}
                         fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                        className="object-cover group-hover:scale-110 transition-transform duration-500 relative z-10"
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                        loading="lazy"
+                        onLoadingComplete={(img) => {
+                          img.classList.add('loaded');
+                          img.parentElement?.querySelector('.animate-pulse')?.classList.add('hidden');
+                        }}
                       />
                       {/* Overlay gradient */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-dark-900/60 to-transparent"></div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-dark-900/60 to-transparent z-20"></div>
                       {/* Glow effect on hover */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-primary-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-primary-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20"></div>
                       
                       {/* Stock Badge */}
                       {product.stock && (
-                        <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-gradient-to-r from-primary-500 to-blue-500 text-white text-[10px] md:text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-full font-bold shadow-lg shadow-primary-500/50 z-10">
+                        <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-gradient-to-r from-primary-500 to-blue-500 text-white text-[10px] md:text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-full font-bold shadow-lg shadow-primary-500/50 z-30">
                           ✓ Stock
                         </div>
                       )}
