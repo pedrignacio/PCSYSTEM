@@ -106,7 +106,7 @@ export default function Products() {
         </motion.div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6 max-w-7xl mx-auto">
           {filteredProducts.length > 0 ? (
             filteredProducts.map((product, index) => (
               <Link
@@ -122,7 +122,7 @@ export default function Products() {
                 >
                   <div className="bg-gradient-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden h-full hover:border-primary-400 hover:shadow-2xl hover:shadow-primary-500/30 transition-all duration-300 flex flex-col">
                     {/* Product Image */}
-                    <div className="relative h-48 bg-gradient-to-br from-primary-600/20 via-dark-700 to-purple-600/20 overflow-hidden">
+                    <div className="relative h-36 md:h-48 bg-gradient-to-br from-primary-600/20 via-dark-700 to-purple-600/20 overflow-hidden">
                       <Image
                         src={product.image}
                         alt={product.name}
@@ -137,24 +137,24 @@ export default function Products() {
                       
                       {/* Stock Badge */}
                       {product.stock && (
-                        <div className="absolute top-3 right-3 bg-gradient-to-r from-primary-500 to-blue-500 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-lg shadow-primary-500/50 z-10">
-                          ✓ En Stock
+                        <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-gradient-to-r from-primary-500 to-blue-500 text-white text-[10px] md:text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-full font-bold shadow-lg shadow-primary-500/50 z-10">
+                          ✓ Stock
                         </div>
                       )}
                     </div>
 
                     {/* Product Info */}
-                    <div className="p-5 bg-gradient-to-b from-transparent to-dark-900/30 flex flex-col flex-grow">
-                      <h3 className="text-lg font-bold mb-2 text-white group-hover:text-primary-300 transition-colors line-clamp-2">
+                    <div className="p-3 md:p-5 bg-gradient-to-b from-transparent to-dark-900/30 flex flex-col flex-grow">
+                      <h3 className="text-sm md:text-lg font-bold mb-1 md:mb-2 text-white group-hover:text-primary-300 transition-colors line-clamp-2 leading-tight">
                         {product.name}
                       </h3>
                       
-                      <p className="text-gray-300 text-sm mb-4 line-clamp-2">
+                      <p className="hidden md:block text-gray-300 text-sm mb-4 line-clamp-2">
                         {product.description}
                       </p>
 
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-2xl font-bold bg-gradient-to-r from-primary-400 to-primary-300 bg-clip-text text-transparent">
+                      <div className="flex items-center justify-between mb-2 md:mb-4">
+                        <span className="text-lg md:text-2xl font-bold bg-gradient-to-r from-primary-400 to-primary-300 bg-clip-text text-transparent">
                           {formatPrice(product.price)}
                         </span>
                       </div>
@@ -166,10 +166,11 @@ export default function Products() {
                           e.stopPropagation();
                           alert(`${product.name} agregado al carrito`);
                         }}
-                        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-4 py-2.5 rounded-lg transition-all duration-300 font-semibold shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60 hover:scale-105 mt-auto"
+                        className="w-full flex items-center justify-center gap-1 md:gap-2 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-2 md:px-4 py-2 md:py-2.5 rounded-lg transition-all duration-300 text-xs md:text-base font-semibold shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60 hover:scale-105 mt-auto"
                       >
-                        <FiShoppingCart />
-                        Agregar al Carrito
+                        <FiShoppingCart className="text-sm md:text-base" />
+                        <span className="hidden md:inline">Agregar al Carrito</span>
+                        <span className="md:hidden">Agregar</span>
                       </button>
                     </div>
                   </div>
