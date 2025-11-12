@@ -429,7 +429,9 @@ export default function AdminPage() {
                     Agregar Producto
                   </motion.button>
                 </div>
-                <div className="overflow-x-auto">
+
+                {/* Desktop Table View - Hidden on Mobile */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b-2 border-gray-200">
@@ -487,6 +489,80 @@ export default function AdminPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Mobile Card View - 2 Columns */}
+                <div className="md:hidden grid grid-cols-2 gap-3">
+                  {products.map((product) => (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      whileHover={{ y: -4 }}
+                      className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all"
+                    >
+                      {/* Product Image */}
+                      <div className="relative h-32 bg-gray-100 flex items-center justify-center">
+                        <Image
+                          src={product.image}
+                          alt={product.name}
+                          width={120}
+                          height={120}
+                          className="object-contain w-full h-full p-2"
+                        />
+                        {/* Stock Badge */}
+                        <span className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-bold ${
+                          product.stock
+                            ? "bg-green-500 text-white"
+                            : "bg-red-500 text-white"
+                        }`}>
+                          {product.stock ? "Stock" : "Agotado"}
+                        </span>
+                      </div>
+
+                      {/* Product Info */}
+                      <div className="p-3">
+                        {/* ID Badge */}
+                        <div className="text-xs text-gray-500 mb-1">
+                          ID: {product.id}
+                        </div>
+
+                        {/* Product Name */}
+                        <h4 className="text-sm font-bold text-gray-900 mb-2 line-clamp-2 min-h-[2.5rem]">
+                          {product.name}
+                        </h4>
+
+                        {/* Price */}
+                        <div className="text-lg font-bold text-blue-600 mb-2">
+                          {formatPrice(product.price)}
+                        </div>
+
+                        {/* Stock Quantity */}
+                        {product.stock && (
+                          <div className="text-xs text-gray-600 mb-3">
+                            {product.stockQuantity} unidades
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditProduct(product)}
+                            className="flex-1 flex items-center justify-center gap-1 py-2 bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 rounded-lg transition-all text-xs font-semibold"
+                          >
+                            <FiEdit className="text-sm" />
+                            <span>Editar</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(product.id)}
+                            className="p-2 bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 rounded-lg transition-all"
+                          >
+                            <FiTrash2 className="text-sm" />
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
               </div>
             )}

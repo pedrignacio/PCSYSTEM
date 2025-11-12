@@ -106,7 +106,7 @@ export default function Products() {
         </motion.div>
 
         {/* Products Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
           {filteredProducts.length > 0 ? (
             filteredProducts.map((product, index) => (
               <Link
