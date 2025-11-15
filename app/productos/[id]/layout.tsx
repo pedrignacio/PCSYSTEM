@@ -3,11 +3,12 @@ import { getProductById } from '@/data/products'
 import { notFound } from 'next/navigation'
 
 type Props = {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const product = getProductById(parseInt(params.id))
+  const { id } = await params
+  const product = getProductById(parseInt(id))
   
   if (!product) {
     return {
@@ -58,7 +59,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [product.image],
     },
     alternates: {
-      canonical: `https://pcsystem.cl/productos/${params.id}`,
+      canonical: `https://pcsystem.cl/productos/${id}`,
     },
   }
 }
