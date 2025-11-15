@@ -348,13 +348,14 @@ export default function Products() {
                     </h3>
                     
                     {product.DETALLE && (
-                      <p className="hidden md:block text-gray-300 text-sm mb-4 line-clamp-2 h-10">
+                      <p className="hidden md:block text-gray-300 text-sm mb-2 line-clamp-2">
                         {product.DETALLE}
                       </p>
                     )}
 
-                    <div className="flex items-center justify-between mb-2 md:mb-4">
-                      <span className="text-lg md:text-2xl font-bold bg-gradient-to-r from-primary-400 to-primary-300 bg-clip-text text-transparent">
+                    {/* Precio destacado */}
+                    <div className="mb-3 md:mb-4 flex-grow flex items-end">
+                      <span className="text-2xl md:text-3xl font-extrabold text-primary-400">
                         {formatPrice(product.PRECIO)}
                       </span>
                     </div>

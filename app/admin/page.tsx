@@ -8,70 +8,75 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
   FiPackage,
-  FiShoppingCart,
-  FiUsers,
-  FiDollarSign,
-  FiTrendingUp,
-  FiSettings,
-  FiLogOut,
   FiEdit,
   FiTrash2,
   FiPlus,
   FiX,
   FiSave,
-  FiPhone,
-  FiMail,
-  FiMapPin,
-  FiClock,
+  FiUpload,
+  FiImage,
+  FiVideo,
+  FiLoader,
+  FiAlertCircle,
   FiCheck,
+  FiSearch,
 } from "react-icons/fi";
-import { products as initialProducts, Product } from "@/data/products";
+import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 
+interface Product {
+  id?: number;
+  NOMBRE: string;
+  DETALLE?: string;
+  PRECIO: number | string;
+  CATEGORIA: string;
+  SUBCATEGORIA?: string;
+  image?: string;
+  images?: string[];
+  videos?: string[];
+  stock?: boolean;
+}
+
 const categories = [
-  { id: "components", name: "Componentes PC" },
-  { id: "peripherals", name: "Periféricos" },
-  { id: "gaming", name: "Gaming" },
-  { id: "accessories", name: "Accesorios" },
-  { id: "storage", name: "Almacenamiento" },
-  { id: "anime", name: "Anime/Coleccionables" },
-  { id: "security", name: "Seguridad" },
+  "Computadores & Cables",
+  "Consolas y Videojuegos",
+  "Electrónica & Audio",
+  "Smartphones / Accesorios",
+  "Almacenamiento",
+  "Peluches",
+  "Juguetes y Figuras",
+  "Bolsos y Modas",
+  "Otros",
+  "Impresión",
+  "Iluminación",
+  "Herramientas",
+  "Papelería y Oficina",
+  "Transformadores"
 ];
 
 export default function AdminPage() {
-  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"overview" | "products" | "contact">("overview");
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  // Contact info state
-  const [contactInfo, setContactInfo] = useState({
-    phone: "+56 9 8914 2836",
-    email: "contacto@pcsystem.cl",
-    address: "Floresta 3, Hualpén, Región del Bío Bío, Chile",
-    hours: "Lunes a Viernes: 10:00 - 20:00\nSábados: 10:00 - 18:00",
-    whatsapp: "56989142836",
-  });
-
-  // Form state for products
-  const [productForm, setProductForm] = useState<Partial<Product>>({
-    name: "",
-    category: "components",
-    price: 0,
+  const [productForm, setProductForm] = useState<Product>({
+    NOMBRE: "",
+    CATEGORIA: categories[0],
+    PRECIO: "",
+    DETALLE: "",
+    SUBCATEGORIA: "",
     image: "",
-    images: [""],
-    description: "",
-    longDescription: "",
+    images: [],
+    videos: [],
     stock: true,
-    stockQuantity: 0,
-    features: [""],
-    specifications: {},
-    rating: 5,
-    reviews: 0,
-    tags: [""],
   });
 
   useEffect(() => {
@@ -80,12 +85,242 @@ export default function AdminPage() {
     }
   }, [isAuthenticated, isLoading, router]);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchProducts();
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    const filtered = products.filter(p =>
+      p.NOMBRE.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.CATEGORIA.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredProducts(filtered);
+  }, [searchTerm, products]);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('Productos')
+        .select('*')
+        .order('id', { ascending: false });
+
+      if (error) throw error;
+      setProducts(data || []);
+      setFilteredProducts(data || []);
+    } catch (error: any) {
+      showError(`Error al cargar productos: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const uploadFile = async (file: File, folder: 'images' | 'videos' = 'images') => {
+    try {
+      setUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+      const filePath = `${folder}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('Imagenes')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('Imagenes')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error: any) {
+      showError(`Error al subir archivo: ${error.message}`);
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showError('Por favor selecciona una imagen válida');
+      return;
+    }
+
+    const url = await uploadFile(file, 'images');
+    if (url) {
+      setProductForm(prev => ({
+        ...prev,
+        image: prev.image || url,
+        images: [...(prev.images || []), url]
+      }));
+      showSuccess('Imagen subida exitosamente');
+    }
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('video/')) {
+      showError('Por favor selecciona un video válido');
+      return;
+    }
+
+    const url = await uploadFile(file, 'videos');
+    if (url) {
+      setProductForm(prev => ({
+        ...prev,
+        videos: [...(prev.videos || []), url]
+      }));
+      showSuccess('Video subido exitosamente');
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setProductForm(prev => {
+      const newImages = prev.images?.filter((_, i) => i !== index) || [];
+      return {
+        ...prev,
+        images: newImages,
+        image: newImages[0] || ""
+      };
+    });
+  };
+
+  const removeVideo = (index: number) => {
+    setProductForm(prev => ({
+      ...prev,
+      videos: prev.videos?.filter((_, i) => i !== index) || []
+    }));
+  };
+
+  const showSuccess = (message: string) => {
+    setSuccessMessage(message);
+    setTimeout(() => setSuccessMessage(""), 3000);
+  };
+
+  const showError = (message: string) => {
+    setErrorMessage(message);
+    setTimeout(() => setErrorMessage(""), 5000);
+  };
+
+  const handleOpenAddProduct = () => {
+    setEditingProduct(null);
+    setProductForm({
+      NOMBRE: "",
+      CATEGORIA: categories[0],
+      PRECIO: "",
+      DETALLE: "",
+      SUBCATEGORIA: "",
+      image: "",
+      images: [],
+      videos: [],
+      stock: true,
+    });
+    setShowProductModal(true);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setProductForm({
+      ...product,
+      images: product.images || [],
+      videos: product.videos || []
+    });
+    setShowProductModal(true);
+  };
+
+  const handleSaveProduct = async () => {
+    try {
+      if (!productForm.NOMBRE || !productForm.PRECIO) {
+        showError("Por favor completa todos los campos requeridos");
+        return;
+      }
+
+      setLoading(true);
+
+      const productData = {
+        NOMBRE: productForm.NOMBRE,
+        DETALLE: productForm.DETALLE || null,
+        PRECIO: typeof productForm.PRECIO === 'string' ? parseFloat(productForm.PRECIO) : productForm.PRECIO,
+        CATEGORIA: productForm.CATEGORIA,
+        SUBCATEGORIA: productForm.SUBCATEGORIA || null,
+        image: productForm.image || null,
+        stock: productForm.stock
+      };
+
+      if (editingProduct?.id) {
+        const { error } = await supabase
+          .from('Productos')
+          .update(productData)
+          .eq('id', editingProduct.id);
+
+        if (error) throw error;
+        showSuccess("Producto actualizado exitosamente");
+      } else {
+        const { error } = await supabase
+          .from('Productos')
+          .insert([productData]);
+
+        if (error) throw error;
+        showSuccess("Producto creado exitosamente");
+      }
+
+      setShowProductModal(false);
+      fetchProducts();
+    } catch (error: any) {
+      showError(`Error al guardar producto: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteProduct = async (id: number) => {
+    if (!confirm("¿Estás seguro de eliminar este producto?")) return;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('Productos')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      showSuccess("Producto eliminado exitosamente");
+      fetchProducts();
+    } catch (error: any) {
+      showError(`Error al eliminar producto: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatPrice = (price: number | string) => {
+    let numPrice = 0;
+    if (typeof price === 'string') {
+      numPrice = parseFloat(price.replace(/[^\d.,]/g, '').replace(',', '.'));
+    } else {
+      numPrice = price;
+    }
+    return new Intl.NumberFormat("es-CL", {
+      style: "currency",
+      currency: "CLP",
+      minimumFractionDigits: 0,
+    }).format(numPrice);
+  };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-dark-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Verificando autenticación...</p>
+          <FiLoader className="animate-spin text-4xl text-primary-500 mx-auto mb-4" />
+          <p className="text-gray-300">Verificando autenticación...</p>
         </div>
       </div>
     );
@@ -95,922 +330,362 @@ export default function AdminPage() {
     return null;
   }
 
-  const stats = [
-    {
-      icon: <FiPackage />,
-      label: "Total Productos",
-      value: products.length,
-      bgColor: "bg-blue-50",
-      textColor: "text-blue-600",
-    },
-    {
-      icon: <FiShoppingCart />,
-      label: "Órdenes Hoy",
-      value: "24",
-      bgColor: "bg-green-50",
-      textColor: "text-green-600",
-    },
-    {
-      icon: <FiDollarSign />,
-      label: "Ingresos del Mes",
-      value: "$2.4M",
-      bgColor: "bg-yellow-50",
-      textColor: "text-yellow-600",
-    },
-  ];
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("es-CL", {
-      style: "currency",
-      currency: "CLP",
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
-
-  const handleOpenAddProduct = () => {
-    setEditingProduct(null);
-    setProductForm({
-      name: "",
-      category: "components",
-      price: 0,
-      image: "",
-      images: [""],
-      description: "",
-      longDescription: "",
-      stock: true,
-      stockQuantity: 0,
-      features: [""],
-      specifications: {},
-      rating: 5,
-      reviews: 0,
-      tags: [""],
-    });
-    setShowProductModal(true);
-  };
-
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
-    setProductForm(product);
-    setShowProductModal(true);
-  };
-
-  const handleSaveProduct = () => {
-    if (editingProduct) {
-      setProducts(products.map(p => p.id === editingProduct.id ? { ...productForm as Product, id: editingProduct.id } : p));
-      setSuccessMessage("Producto actualizado exitosamente");
-    } else {
-      const newProduct = {
-        ...productForm as Product,
-        id: Math.max(...products.map(p => p.id)) + 1,
-      };
-      setProducts([...products, newProduct]);
-      setSuccessMessage("Producto agregado exitosamente");
-    }
-    setShowProductModal(false);
-    setTimeout(() => setSuccessMessage(""), 3000);
-  };
-
-  const handleDeleteProduct = (id: number) => {
-    if (confirm("¿Estás seguro de eliminar este producto?")) {
-      setProducts(products.filter(p => p.id !== id));
-      setSuccessMessage("Producto eliminado exitosamente");
-      setTimeout(() => setSuccessMessage(""), 3000);
-    }
-  };
-
-  const handleSaveContact = () => {
-    setSuccessMessage("Información de contacto actualizada exitosamente");
-    setTimeout(() => setSuccessMessage(""), 3000);
-  };
-
-  const addArrayField = (field: 'features' | 'images' | 'tags') => {
-    setProductForm({
-      ...productForm,
-      [field]: [...(productForm[field] as string[]), ""]
-    });
-  };
-
-  const removeArrayField = (field: 'features' | 'images' | 'tags', index: number) => {
-    const arr = productForm[field] as string[];
-    setProductForm({
-      ...productForm,
-      [field]: arr.filter((_, i) => i !== index)
-    });
-  };
-
-  const updateArrayField = (field: 'features' | 'images' | 'tags', index: number, value: string) => {
-    const arr = [...(productForm[field] as string[])];
-    arr[index] = value;
-    setProductForm({
-      ...productForm,
-      [field]: arr
-    });
-  };
-
   return (
     <>
       <Header />
-      <main className="min-h-screen pt-24 pb-20 px-4 bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <main className="min-h-screen pt-24 pb-20 px-4 bg-dark-900">
         <div className="container mx-auto max-w-7xl">
-          {/* Header Section */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4"
-          >
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                Panel de Administración
-              </h1>
-              <p className="text-gray-600">
-                Bienvenido, <span className="text-blue-600 font-semibold">{user?.name}</span>
-              </p>
-            </div>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={logout}
-              className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-xl transition-all font-semibold shadow-sm"
-            >
-              <FiLogOut />
-              Cerrar Sesión
-            </motion.button>
-          </motion.div>
-
-          {/* Success Message */}
+          {/* Success/Error Messages */}
           <AnimatePresence>
             {successMessage && (
               <motion.div
-                initial={{ opacity: 0, y: -20 }}
+                initial={{ opacity: 0, y: -50 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="mb-6 p-4 bg-green-50 border-2 border-green-200 rounded-xl flex items-center gap-3"
+                exit={{ opacity: 0, y: -50 }}
+                className="fixed top-24 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2"
               >
-                <FiCheck className="text-green-600 text-xl" />
-                <p className="text-green-800 font-semibold">{successMessage}</p>
+                <FiCheck />
+                {successMessage}
+              </motion.div>
+            )}
+            {errorMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -50 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -50 }}
+                className="fixed top-24 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2"
+              >
+                <FiAlertCircle />
+                {errorMessage}
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {stats.map((stat, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                whileHover={{ y: -5, scale: 1.02 }}
-                className={`${stat.bgColor} border-2 border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all`}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`text-3xl ${stat.textColor}`}>
-                    {stat.icon}
-                  </div>
-                  <FiTrendingUp className="text-green-500" />
-                </div>
-                <p className="text-gray-600 text-sm mb-1">{stat.label}</p>
-                <p className={`text-3xl font-bold ${stat.textColor}`}>{stat.value}</p>
-              </motion.div>
-            ))}
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-white mb-2">Panel de Administración</h1>
+            <p className="text-gray-400">Gestiona tus productos</p>
           </div>
 
-          {/* Tabs */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mb-8"
-          >
-            <div className="flex gap-4 border-b-2 border-gray-200 bg-white rounded-t-2xl px-6">
-              <button
-                onClick={() => setActiveTab("overview")}
-                className={`px-6 py-4 font-semibold transition-all relative ${
-                  activeTab === "overview" ? "text-blue-600" : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                Resumen
-                {activeTab === "overview" && (
-                  <motion.div
-                    layoutId="activeAdminTab"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-t"
-                  />
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab("products")}
-                className={`px-6 py-4 font-semibold transition-all relative ${
-                  activeTab === "products" ? "text-blue-600" : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                Productos
-                {activeTab === "products" && (
-                  <motion.div
-                    layoutId="activeAdminTab"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-t"
-                  />
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab("contact")}
-                className={`px-6 py-4 font-semibold transition-all relative ${
-                  activeTab === "contact" ? "text-blue-600" : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                Contacto
-                {activeTab === "contact" && (
-                  <motion.div
-                    layoutId="activeAdminTab"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-t"
-                  />
-                )}
-              </button>
-            </div>
-          </motion.div>
-
-          {/* Content */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-          >
-            {/* Overview Tab */}
-            {activeTab === "overview" && (
-              <div className="grid lg:grid-cols-2 gap-6">
-                {/* Recent Activity */}
-                <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                    <FiTrendingUp className="text-blue-600" />
-                    Actividad Reciente
-                  </h3>
-                  <div className="space-y-4">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 hover:border-blue-300 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <FiShoppingCart className="text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-gray-900">Nueva orden #{1000 + i}</p>
-                            <p className="text-sm text-gray-500">Hace {i} hora(s)</p>
-                          </div>
-                        </div>
-                        <span className="text-blue-600 font-bold">$45.000</span>
-                      </div>
-                    ))}
-                  </div>
+          {/* Stats */}
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-dark-800 border border-primary-500/30 rounded-xl p-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-primary-500/20 p-3 rounded-lg">
+                  <FiPackage className="text-2xl text-primary-400" />
                 </div>
-
-                {/* Quick Actions */}
-                <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                    <FiSettings className="text-blue-600" />
-                    Acciones Rápidas
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={handleOpenAddProduct}
-                      className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl hover:border-blue-300 transition-all"
-                    >
-                      <FiPlus className="text-3xl text-blue-600 mb-2" />
-                      <p className="font-semibold text-gray-900">Nuevo Producto</p>
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setActiveTab("products")}
-                      className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-xl hover:border-green-300 transition-all"
-                    >
-                      <FiPackage className="text-3xl text-green-600 mb-2" />
-                      <p className="font-semibold text-gray-900">Ver Productos</p>
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setActiveTab("contact")}
-                      className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-xl hover:border-purple-300 transition-all"
-                    >
-                      <FiPhone className="text-3xl text-purple-600 mb-2" />
-                      <p className="font-semibold text-gray-900">Editar Contacto</p>
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-200 rounded-xl hover:border-orange-300 transition-all"
-                    >
-                      <FiSettings className="text-3xl text-orange-600 mb-2" />
-                      <p className="font-semibold text-gray-900">Configuración</p>
-                    </motion.button>
-                  </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Total Productos</p>
+                  <p className="text-3xl font-bold text-white">{products.length}</p>
                 </div>
               </div>
-            )}
+            </div>
+          </div>
 
-            {/* Products Tab */}
-            {activeTab === "products" && (
-              <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <FiPackage className="text-blue-600" />
-                    Gestión de Productos ({products.length})
-                  </h3>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleOpenAddProduct}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-semibold shadow-md"
-                  >
-                    <FiPlus />
-                    Agregar Producto
-                  </motion.button>
-                </div>
+          {/* Search and Add Button */}
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex-1 relative">
+              <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar productos..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-dark-800 border border-dark-700 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+              />
+            </div>
+            <button
+              onClick={handleOpenAddProduct}
+              className="flex items-center gap-2 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg"
+            >
+              <FiPlus />
+              Agregar Producto
+            </button>
+          </div>
 
-                {/* Desktop Table View - Hidden on Mobile */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b-2 border-gray-200">
-                        <th className="text-left py-4 px-4 text-gray-600 font-semibold">ID</th>
-                        <th className="text-left py-4 px-4 text-gray-600 font-semibold">Imagen</th>
-                        <th className="text-left py-4 px-4 text-gray-600 font-semibold">Nombre</th>
-                        <th className="text-left py-4 px-4 text-gray-600 font-semibold">Precio</th>
-                        <th className="text-left py-4 px-4 text-gray-600 font-semibold">Stock</th>
-                        <th className="text-left py-4 px-4 text-gray-600 font-semibold">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {products.map((product) => (
-                        <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                          <td className="py-4 px-4 text-gray-700">{product.id}</td>
-                          <td className="py-4 px-4">
-                            <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200">
+          {/* Products Table */}
+          <div className="bg-dark-800 border border-dark-700 rounded-xl overflow-hidden">
+            {loading ? (
+              <div className="p-12 text-center">
+                <FiLoader className="animate-spin text-4xl text-primary-500 mx-auto mb-4" />
+                <p className="text-gray-400">Cargando productos...</p>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="p-12 text-center">
+                <FiPackage className="text-6xl text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-400 text-lg">No hay productos</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-dark-700">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-gray-300 font-semibold">Imagen</th>
+                      <th className="px-6 py-4 text-left text-gray-300 font-semibold">Nombre</th>
+                      <th className="px-6 py-4 text-left text-gray-300 font-semibold">Categoría</th>
+                      <th className="px-6 py-4 text-left text-gray-300 font-semibold">Precio</th>
+                      <th className="px-6 py-4 text-left text-gray-300 font-semibold">Stock</th>
+                      <th className="px-6 py-4 text-right text-gray-300 font-semibold">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-dark-700">
+                    {filteredProducts.map((product) => (
+                      <tr key={product.id} className="hover:bg-dark-700/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="w-16 h-16 relative bg-dark-700 rounded-lg overflow-hidden">
+                            {product.image ? (
                               <Image
                                 src={product.image}
-                                alt={product.name}
-                                width={48}
-                                height={48}
-                                className="object-cover w-full h-full"
+                                alt={product.NOMBRE}
+                                fill
+                                className="object-cover"
                               />
-                            </div>
-                          </td>
-                          <td className="py-4 px-4 text-gray-900 font-semibold max-w-xs truncate">{product.name}</td>
-                          <td className="py-4 px-4 text-blue-600 font-bold">{formatPrice(product.price)}</td>
-                          <td className="py-4 px-4">
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                              product.stock
-                                ? "bg-green-100 text-green-700 border border-green-200"
-                                : "bg-red-100 text-red-700 border border-red-200"
-                            }`}>
-                              {product.stock ? `${product.stockQuantity} unid.` : "Agotado"}
-                            </span>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleEditProduct(product)}
-                                className="p-2 bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 rounded-lg transition-all"
-                              >
-                                <FiEdit />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteProduct(product.id)}
-                                className="p-2 bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 rounded-lg transition-all"
-                              >
-                                <FiTrash2 />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile Card View - 2 Columns */}
-                <div className="md:hidden grid grid-cols-2 gap-3">
-                  {products.map((product) => (
-                    <motion.div
-                      key={product.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      whileHover={{ y: -4 }}
-                      className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all"
-                    >
-                      {/* Product Image */}
-                      <div className="relative h-32 bg-gray-100 flex items-center justify-center">
-                        <Image
-                          src={product.image}
-                          alt={product.name}
-                          width={120}
-                          height={120}
-                          className="object-contain w-full h-full p-2"
-                        />
-                        {/* Stock Badge */}
-                        <span className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-bold ${
-                          product.stock
-                            ? "bg-green-500 text-white"
-                            : "bg-red-500 text-white"
-                        }`}>
-                          {product.stock ? "Stock" : "Agotado"}
-                        </span>
-                      </div>
-
-                      {/* Product Info */}
-                      <div className="p-3">
-                        {/* ID Badge */}
-                        <div className="text-xs text-gray-500 mb-1">
-                          ID: {product.id}
-                        </div>
-
-                        {/* Product Name */}
-                        <h4 className="text-sm font-bold text-gray-900 mb-2 line-clamp-2 min-h-[2.5rem]">
-                          {product.name}
-                        </h4>
-
-                        {/* Price */}
-                        <div className="text-lg font-bold text-blue-600 mb-2">
-                          {formatPrice(product.price)}
-                        </div>
-
-                        {/* Stock Quantity */}
-                        {product.stock && (
-                          <div className="text-xs text-gray-600 mb-3">
-                            {product.stockQuantity} unidades
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <FiImage className="text-gray-600" />
+                              </div>
+                            )}
                           </div>
-                        )}
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEditProduct(product)}
-                            className="flex-1 flex items-center justify-center gap-1 py-2 bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 rounded-lg transition-all text-xs font-semibold"
-                          >
-                            <FiEdit className="text-sm" />
-                            <span>Editar</span>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteProduct(product.id)}
-                            className="p-2 bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 rounded-lg transition-all"
-                          >
-                            <FiTrash2 className="text-sm" />
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="font-semibold text-white">{product.NOMBRE}</p>
+                          {product.SUBCATEGORIA && (
+                            <p className="text-sm text-gray-400">{product.SUBCATEGORIA}</p>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-gray-300">{product.CATEGORIA}</td>
+                        <td className="px-6 py-4 text-white font-semibold">{formatPrice(product.PRECIO)}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            product.stock ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                          }`}>
+                            {product.stock ? 'En Stock' : 'Sin Stock'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleEditProduct(product)}
+                              className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors"
+                            >
+                              <FiEdit />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProduct(product.id!)}
+                              className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"
+                            >
+                              <FiTrash2 />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
-
-            {/* Contact Tab */}
-            {activeTab === "contact" && (
-              <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-sm max-w-3xl mx-auto">
-                <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                  <FiPhone className="text-blue-600" />
-                  Información de Contacto
-                </h3>
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <FiPhone className="inline mr-2" />
-                      Teléfono
-                    </label>
-                    <input
-                      type="text"
-                      value={contactInfo.phone}
-                      onChange={(e) => setContactInfo({ ...contactInfo, phone: e.target.value })}
-                      className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none transition-all text-gray-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <FiMail className="inline mr-2" />
-                      Correo Electrónico
-                    </label>
-                    <input
-                      type="email"
-                      value={contactInfo.email}
-                      onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })}
-                      className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none transition-all text-gray-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <FiPhone className="inline mr-2" />
-                      WhatsApp (solo números)
-                    </label>
-                    <input
-                      type="text"
-                      value={contactInfo.whatsapp}
-                      onChange={(e) => setContactInfo({ ...contactInfo, whatsapp: e.target.value })}
-                      className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none transition-all text-gray-900"
-                      placeholder="56989142836"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <FiMapPin className="inline mr-2" />
-                      Dirección
-                    </label>
-                    <input
-                      type="text"
-                      value={contactInfo.address}
-                      onChange={(e) => setContactInfo({ ...contactInfo, address: e.target.value })}
-                      className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none transition-all text-gray-900"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      <FiClock className="inline mr-2" />
-                      Horarios de Atención
-                    </label>
-                    <textarea
-                      value={contactInfo.hours}
-                      onChange={(e) => setContactInfo({ ...contactInfo, hours: e.target.value })}
-                      rows={4}
-                      className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none transition-all text-gray-900"
-                    />
-                  </div>
-
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handleSaveContact}
-                    className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-bold text-lg shadow-md transition-all"
-                  >
-                    <FiSave className="text-xl" />
-                    Guardar Cambios
-                  </motion.button>
-                </div>
-              </div>
-            )}
-          </motion.div>
+          </div>
         </div>
 
-        {/* Product Modal - Part 1 */}
+        {/* Product Modal */}
         <AnimatePresence>
           {showProductModal && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
               onClick={() => setShowProductModal(false)}
             >
               <motion.div
-                initial={{ scale: 0.9, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 20 }}
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-white rounded-2xl shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+                className="bg-dark-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-dark-700"
               >
-                {/* Header */}
-                <div className="sticky top-0 bg-white border-b-2 border-gray-200 p-6 flex items-center justify-between z-10">
-                  <h3 className="text-2xl font-bold text-gray-900">
-                    {editingProduct ? "Editar Producto" : "Agregar Nuevo Producto"}
-                  </h3>
+                <div className="sticky top-0 bg-dark-800 border-b border-dark-700 p-6 flex items-center justify-between z-10">
+                  <h2 className="text-2xl font-bold text-white">
+                    {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
+                  </h2>
                   <button
                     onClick={() => setShowProductModal(false)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
                   >
-                    <FiX className="text-2xl text-gray-600" />
+                    <FiX className="text-2xl text-gray-400" />
                   </button>
                 </div>
 
-                {/* Content with Grid Layout */}
-                <div className="flex-1 overflow-y-auto">
-                  <div className="grid lg:grid-cols-2 gap-6 p-6">
-                    {/* Left Column - Form */}
-                    <div className="space-y-6">
+                <div className="p-6 space-y-6">
                   {/* Basic Info */}
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Nombre del Producto *
-                      </label>
+                      <label className="block text-gray-300 mb-2 font-semibold">Nombre *</label>
                       <input
                         type="text"
-                        value={productForm.name}
-                        onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                        className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none transition-all text-gray-900"
-                        placeholder="Ej: Procesador Intel Core i5"
+                        value={productForm.NOMBRE}
+                        onChange={(e) => setProductForm({ ...productForm, NOMBRE: e.target.value })}
+                        className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                        placeholder="Nombre del producto"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Categoría *
-                      </label>
+                      <label className="block text-gray-300 mb-2 font-semibold">Precio *</label>
+                      <input
+                        type="number"
+                        value={productForm.PRECIO}
+                        onChange={(e) => setProductForm({ ...productForm, PRECIO: e.target.value })}
+                        className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                        placeholder="0"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-300 mb-2 font-semibold">Categoría</label>
                       <select
-                        value={productForm.category}
-                        onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
-                        className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none transition-all text-gray-900"
+                        value={productForm.CATEGORIA}
+                        onChange={(e) => setProductForm({ ...productForm, CATEGORIA: e.target.value })}
+                        className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
                       >
-                        {categories.map((cat) => (
-                          <option key={cat.id} value={cat.id}>
-                            {cat.name}
-                          </option>
+                        {categories.map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
                         ))}
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Precio (CLP) *
-                      </label>
+                      <label className="block text-gray-300 mb-2 font-semibold">Subcategoría</label>
                       <input
-                        type="number"
-                        value={productForm.price}
-                        onChange={(e) => setProductForm({ ...productForm, price: Number(e.target.value) })}
-                        className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none transition-all text-gray-900"
-                        placeholder="0"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Stock Disponible *
-                      </label>
-                      <input
-                        type="number"
-                        value={productForm.stockQuantity}
-                        onChange={(e) => setProductForm({ ...productForm, stockQuantity: Number(e.target.value), stock: Number(e.target.value) > 0 })}
-                        className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none transition-all text-gray-900"
-                        placeholder="0"
+                        type="text"
+                        value={productForm.SUBCATEGORIA || ''}
+                        onChange={(e) => setProductForm({ ...productForm, SUBCATEGORIA: e.target.value })}
+                        className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                        placeholder="Opcional"
                       />
                     </div>
                   </div>
 
-                  {/* Image URL */}
+                  {/* Description */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      URL de Imagen Principal *
-                    </label>
-                    <input
-                      type="text"
-                      value={productForm.image}
-                      onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
-                      className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none transition-all text-gray-900"
-                      placeholder="https://..."
-                    />
-                  </div>
-
-                  {/* Additional Images */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Imágenes Adicionales
-                    </label>
-                    {productForm.images?.map((img, idx) => (
-                      <div key={idx} className="flex gap-2 mb-2">
-                        <input
-                          type="text"
-                          value={img}
-                          onChange={(e) => updateArrayField('images', idx, e.target.value)}
-                          className="flex-1 px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none transition-all text-gray-900"
-                          placeholder="URL de imagen"
-                        />
-                        <button
-                          onClick={() => removeArrayField('images', idx)}
-                          className="px-4 py-2 bg-red-50 border-2 border-red-200 text-red-600 hover:bg-red-100 rounded-xl transition-all"
-                        >
-                          <FiTrash2 />
-                        </button>
-                      </div>
-                    ))}
-                    <button
-                      onClick={() => addArrayField('images')}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 border-2 border-blue-200 text-blue-600 hover:bg-blue-100 rounded-xl transition-all font-semibold"
-                    >
-                      <FiPlus />
-                      Agregar Imagen
-                    </button>
-                  </div>
-
-                  {/* Descriptions */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Descripción Corta *
-                    </label>
+                    <label className="block text-gray-300 mb-2 font-semibold">Descripción</label>
                     <textarea
-                      value={productForm.description}
-                      onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                      rows={2}
-                      className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none transition-all text-gray-900"
-                      placeholder="Descripción breve del producto"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Descripción Detallada
-                    </label>
-                    <textarea
-                      value={productForm.longDescription}
-                      onChange={(e) => setProductForm({ ...productForm, longDescription: e.target.value })}
+                      value={productForm.DETALLE || ''}
+                      onChange={(e) => setProductForm({ ...productForm, DETALLE: e.target.value })}
                       rows={4}
-                      className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none transition-all text-gray-900"
-                      placeholder="Descripción completa del producto"
+                      className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                      placeholder="Descripción del producto"
                     />
                   </div>
 
-                  {/* Features */}
+                  {/* Stock */}
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={productForm.stock}
+                      onChange={(e) => setProductForm({ ...productForm, stock: e.target.checked })}
+                      className="w-5 h-5 bg-dark-700 border-dark-600 rounded focus:ring-primary-500"
+                    />
+                    <label className="text-gray-300 font-semibold">Producto en stock</label>
+                  </div>
+
+                  {/* Images */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Características
-                    </label>
-                    {productForm.features?.map((feature, idx) => (
-                      <div key={idx} className="flex gap-2 mb-2">
-                        <input
-                          type="text"
-                          value={feature}
-                          onChange={(e) => updateArrayField('features', idx, e.target.value)}
-                          className="flex-1 px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none transition-all text-gray-900"
-                          placeholder="Característica del producto"
-                        />
-                        <button
-                          onClick={() => removeArrayField('features', idx)}
-                          className="px-4 py-2 bg-red-50 border-2 border-red-200 text-red-600 hover:bg-red-100 rounded-xl transition-all"
-                        >
-                          <FiTrash2 />
-                        </button>
+                    <label className="block text-gray-300 mb-2 font-semibold">Imágenes</label>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2 px-4 py-3 bg-dark-700 hover:bg-dark-600 border border-dark-600 rounded-lg cursor-pointer transition-colors">
+                          <FiUpload />
+                          <span className="text-white">Subir Imagen</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                            disabled={uploading}
+                          />
+                        </label>
+                        {uploading && <FiLoader className="animate-spin text-primary-500" />}
                       </div>
-                    ))}
-                    <button
-                      onClick={() => addArrayField('features')}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 border-2 border-blue-200 text-blue-600 hover:bg-blue-100 rounded-xl transition-all font-semibold"
-                    >
-                      <FiPlus />
-                      Agregar Característica
-                    </button>
-                  </div>
 
-                  {/* Tags */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Etiquetas
-                    </label>
-                    {productForm.tags?.map((tag, idx) => (
-                      <div key={idx} className="flex gap-2 mb-2">
-                        <input
-                          type="text"
-                          value={tag}
-                          onChange={(e) => updateArrayField('tags', idx, e.target.value)}
-                          className="flex-1 px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none transition-all text-gray-900"
-                          placeholder="Etiqueta"
-                        />
-                        <button
-                          onClick={() => removeArrayField('tags', idx)}
-                          className="px-4 py-2 bg-red-50 border-2 border-red-200 text-red-600 hover:bg-red-100 rounded-xl transition-all"
-                        >
-                          <FiTrash2 />
-                        </button>
-                      </div>
-                    ))}
-                    <button
-                      onClick={() => addArrayField('tags')}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 border-2 border-blue-200 text-blue-600 hover:bg-blue-100 rounded-xl transition-all font-semibold"
-                    >
-                      <FiPlus />
-                      Agregar Etiqueta
-                    </button>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-4 pt-6 border-t-2 border-gray-200">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={handleSaveProduct}
-                      className="flex-1 flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-bold text-lg shadow-md transition-all"
-                    >
-                      <FiSave className="text-xl" />
-                      {editingProduct ? "Actualizar Producto" : "Guardar Producto"}
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setShowProductModal(false)}
-                      className="px-8 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-lg transition-all"
-                    >
-                      Cancelar
-                    </motion.button>
-                  </div>
-                    </div>
-
-                    {/* Right Column - Preview */}
-                    <div className="hidden lg:block sticky top-0 h-fit">
-                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border-2 border-gray-200">
-                        <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                          <FiPackage className="text-blue-600" />
-                          Vista Previa
-                        </h4>
-                        
-                        {/* Product Card Preview */}
-                        <div className="bg-white rounded-xl overflow-hidden shadow-lg border-2 border-gray-200 hover:shadow-xl transition-all">
-                          {/* Image */}
-                          <div className="relative h-56 bg-gray-100 flex items-center justify-center overflow-hidden">
-                            {productForm.image ? (
+                      {productForm.images && productForm.images.length > 0 && (
+                        <div className="grid grid-cols-4 gap-4">
+                          {productForm.images.map((img, idx) => (
+                            <div key={idx} className="relative group">
                               <Image
-                                src={productForm.image}
-                                alt={productForm.name || "Vista previa"}
-                                width={300}
-                                height={300}
-                                className="object-contain w-full h-full p-4"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                  e.currentTarget.parentElement!.innerHTML = '<div class="text-gray-400 text-center p-8"><svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><p>Imagen no válida</p></div>';
-                                }}
+                                src={img}
+                                alt={`Imagen ${idx + 1}`}
+                                width={200}
+                                height={200}
+                                className="w-full h-32 object-cover rounded-lg"
                               />
-                            ) : (
-                              <div className="text-gray-400 text-center p-8">
-                                <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                <p className="text-sm">Sin imagen</p>
-                              </div>
-                            )}
-                            {productForm.stock && productForm.stockQuantity! > 0 ? (
-                              <span className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                                En Stock
-                              </span>
-                            ) : (
-                              <span className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                                Sin Stock
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Content */}
-                          <div className="p-5">
-                            {/* Category Badge */}
-                            <div className="mb-2">
-                              <span className="inline-block px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold">
-                                {categories.find(c => c.id === productForm.category)?.name || 'Categoría'}
-                              </span>
+                              <button
+                                onClick={() => removeImage(idx)}
+                                className="absolute top-2 right-2 p-1 bg-red-500 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <FiX className="text-white" />
+                              </button>
                             </div>
-
-                            {/* Product Name */}
-                            <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 min-h-[3.5rem]">
-                              {productForm.name || 'Nombre del producto'}
-                            </h3>
-
-                            {/* Description */}
-                            <p className="text-gray-600 text-sm mb-4 line-clamp-2 min-h-[2.5rem]">
-                              {productForm.description || 'Descripción del producto'}
-                            </p>
-
-                            {/* Price */}
-                            <div className="flex items-baseline gap-2 mb-4">
-                              <span className="text-2xl font-bold text-blue-600">
-                                ${productForm.price?.toLocaleString('es-CL') || '0'}
-                              </span>
-                              <span className="text-sm text-gray-500">CLP</span>
-                            </div>
-
-                            {/* Tags */}
-                            {productForm.tags && productForm.tags.length > 0 && productForm.tags[0] !== '' && (
-                              <div className="flex flex-wrap gap-1 mb-4">
-                                {productForm.tags.slice(0, 3).map((tag, idx) => (
-                                  tag && (
-                                    <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                      {tag}
-                                    </span>
-                                  )
-                                ))}
-                              </div>
-                            )}
-
-                            {/* Stock Info */}
-                            <div className="text-sm text-gray-500 mb-3">
-                              Stock: <span className="font-semibold text-gray-700">{productForm.stockQuantity || 0} unidades</span>
-                            </div>
-
-                            {/* Button */}
-                            <button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-2 rounded-lg font-semibold hover:shadow-lg transition-all cursor-not-allowed opacity-75">
-                              Ver Detalles
-                            </button>
-                          </div>
+                          ))}
                         </div>
-
-                        {/* Preview Info */}
-                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <p className="text-xs text-blue-700 flex items-start gap-2">
-                            <span className="mt-0.5">💡</span>
-                            <span>Esta es una vista previa de cómo se verá tu producto en la tienda. Los cambios se reflejan en tiempo real.</span>
-                          </p>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </div>
+
+                  {/* Videos */}
+                  <div>
+                    <label className="block text-gray-300 mb-2 font-semibold">Videos</label>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2 px-4 py-3 bg-dark-700 hover:bg-dark-600 border border-dark-600 rounded-lg cursor-pointer transition-colors">
+                          <FiVideo />
+                          <span className="text-white">Subir Video</span>
+                          <input
+                            type="file"
+                            accept="video/*"
+                            onChange={handleVideoUpload}
+                            className="hidden"
+                            disabled={uploading}
+                          />
+                        </label>
+                        {uploading && <FiLoader className="animate-spin text-primary-500" />}
+                      </div>
+
+                      {productForm.videos && productForm.videos.length > 0 && (
+                        <div className="space-y-2">
+                          {productForm.videos.map((video, idx) => (
+                            <div key={idx} className="flex items-center justify-between bg-dark-700 p-3 rounded-lg">
+                              <span className="text-gray-300 text-sm truncate flex-1">Video {idx + 1}</span>
+                              <button
+                                onClick={() => removeVideo(idx)}
+                                className="p-1 bg-red-500 hover:bg-red-600 rounded"
+                              >
+                                <FiX className="text-white" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="sticky bottom-0 bg-dark-800 border-t border-dark-700 p-6 flex justify-end gap-4">
+                  <button
+                    onClick={() => setShowProductModal(false)}
+                    className="px-6 py-3 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSaveProduct}
+                    disabled={loading || uploading}
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white rounded-lg transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? <FiLoader className="animate-spin" /> : <FiSave />}
+                    {editingProduct ? 'Actualizar' : 'Crear'} Producto
+                  </button>
                 </div>
               </motion.div>
             </motion.div>
