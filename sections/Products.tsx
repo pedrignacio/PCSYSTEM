@@ -3,20 +3,25 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { 
-  FiCpu, 
-  FiMonitor, 
-  FiHeadphones, 
+import {
+  FiCpu,
+  FiMonitor,
+  FiHeadphones,
   FiSmartphone,
   FiHardDrive,
   FiCamera,
   FiShoppingCart,
-  FiLoader
+  FiLoader,
+  FiChevronLeft,
+  FiChevronRight,
 } from "react-icons/fi";
 import { IoGameController } from "react-icons/io5";
 import { MdToys } from "react-icons/md";
 import { supabase } from "@/lib/supabase";
 import React from "react";
+import Cart from "./Cart";
+import { useToast } from '@/hooks/useToast';
+import ToastContainer from '@/components/ToastContainer';
 
 interface Product {
   id: number;
@@ -31,20 +36,20 @@ interface Product {
 
 // Mapear las categorías de tu CSV a iconos
 const categoryMapping: { [key: string]: { icon: React.ReactElement; name: string } } = {
-  'Computadores & Cables': { icon: React.createElement(FiCpu), name: 'Computadores & Cables' },
-  'Consolas y Videojuegos': { icon: React.createElement(IoGameController), name: 'Gaming' },
-  'Electrónica & Audio': { icon: React.createElement(FiHeadphones), name: 'Audio' },
-  'Smartphones / Accesorios': { icon: React.createElement(FiSmartphone), name: 'Móviles' },
-  'Almacenamiento': { icon: React.createElement(FiHardDrive), name: 'Almacenamiento' },
-  'Peluches': { icon: React.createElement(MdToys), name: 'Peluches' },
-  'Juguetes y Figuras': { icon: React.createElement(MdToys), name: 'Figuras' },
-  'Bolsos y Modas': { icon: React.createElement(FiCamera), name: 'Moda' },
-  'Otros': { icon: React.createElement(FiMonitor), name: 'Otros' },
-  'Impresión': { icon: React.createElement(FiMonitor), name: 'Impresión' },
-  'Iluminación': { icon: React.createElement(FiMonitor), name: 'Iluminación' },
-  'Herramientas': { icon: React.createElement(FiMonitor), name: 'Herramientas' },
-  'Papelería y Oficina': { icon: React.createElement(FiMonitor), name: 'Oficina' },
-  'Transformadores': { icon: React.createElement(FiMonitor), name: 'Transformadores' }
+  "Computadores & Cables": { icon: React.createElement(FiCpu), name: "Computadores & Cables" },
+  "Consolas y Videojuegos": { icon: React.createElement(IoGameController), name: "Gaming" },
+  "Electrónica & Audio": { icon: React.createElement(FiHeadphones), name: "Audio" },
+  "Smartphones / Accesorios": { icon: React.createElement(FiSmartphone), name: "Móviles" },
+  Almacenamiento: { icon: React.createElement(FiHardDrive), name: "Almacenamiento" },
+  Peluches: { icon: React.createElement(MdToys), name: "Peluches" },
+  "Juguetes y Figuras": { icon: React.createElement(MdToys), name: "Figuras" },
+  "Bolsos y Modas": { icon: React.createElement(FiCamera), name: "Moda" },
+  Otros: { icon: React.createElement(FiMonitor), name: "Otros" },
+  Impresión: { icon: React.createElement(FiMonitor), name: "Impresión" },
+  Iluminación: { icon: React.createElement(FiMonitor), name: "Iluminación" },
+  Herramientas: { icon: React.createElement(FiMonitor), name: "Herramientas" },
+  "Papelería y Oficina": { icon: React.createElement(FiMonitor), name: "Oficina" },
+  Transformadores: { icon: React.createElement(FiMonitor), name: "Transformadores" },
 };
 
 interface Category {
@@ -60,53 +65,61 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+  const { toasts, showToast, removeToast } = useToast();
+
+  // Estados para paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productsPerPage] = useState(12); // 12 productos por página
 
   // Cargar productos y generar categorías dinámicamente
   useEffect(() => {
     fetchProducts();
   }, []);
 
+  // Reset página cuando cambia filtro
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, searchTerm]);
+
+  // Actualizar contador del carrito
+  useEffect(() => {
+    const updateCartCount = () => {
+      const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+      const totalItems = cart.reduce((total: number, item: any) => total + item.quantity, 0);
+      setCartCount(totalItems);
+    };
+
+    updateCartCount();
+
+    const handleCartUpdate = () => {
+      updateCartCount();
+    };
+
+    window.addEventListener('cartUpdated', handleCartUpdate);
+    return () => window.removeEventListener('cartUpdated', handleCartUpdate);
+  }, []);
+
   const fetchProducts = async () => {
     try {
-      // Debug de variables de entorno
-      console.log('SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-      console.log('SUPABASE_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Exists' : 'Missing');
-      
       setLoading(true);
       const { data, error } = await supabase
         .from('Productos')
         .select('*')
         .order('id', { ascending: true });
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
+      if (error) throw error;
       
       console.log('Datos recibidos de Supabase:', data);
       console.log('Cantidad de productos recibidos:', data?.length || 0);
       
-      // Debug cada producto individualmente
-      if (data) {
-        data.forEach((product, index) => {
-          console.log(`Producto ${index + 1}:`, {
-            id: product.id,
-            nombre: product.NOMBRE,
-            precio: product.PRECIO,
-            categoria: product.CATEGORIA
-          });
-        });
-      }
-      
-      // Hacer el filtro mucho más permisivo - solo verificar que exista el nombre
       const validProducts = (data || []).filter((product: any) => {
         const hasName = product.NOMBRE && product.NOMBRE.trim() !== '';
-        console.log(`Filtrando producto: ${product.NOMBRE} - Válido: ${hasName}`);
         return hasName;
       });
       
       console.log('Productos válidos después del filtro:', validProducts.length);
-      console.log('Productos válidos:', validProducts);
       
       setProducts(validProducts);
       
@@ -136,6 +149,7 @@ export default function Products() {
     }
   };
 
+  // Filtrar productos
   const filteredProducts = products.filter(product => {
     const matchesCategory = selectedCategory === "all" || product.CATEGORIA === selectedCategory;
     const matchesSearch = product.NOMBRE?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -143,20 +157,24 @@ export default function Products() {
     return matchesCategory && matchesSearch;
   });
 
+  // Cálculos de paginación
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+
   const formatPrice = (price: number | string) => {
     let numPrice = 0;
     
     if (typeof price === 'string') {
-      // Remover cualquier carácter no numérico excepto puntos y comas
       const cleanPrice = price.replace(/[^\d.,]/g, '');
       numPrice = parseFloat(cleanPrice.replace(',', '.'));
     } else if (typeof price === 'number') {
       numPrice = price;
     }
     
-    // Si el precio sigue siendo 0 o NaN, usar un valor por defecto
     if (isNaN(numPrice) || numPrice <= 0) {
-      numPrice = 0;
+      return 'Consultar precio';
     }
     
     return new Intl.NumberFormat('es-CL', {
@@ -169,22 +187,23 @@ export default function Products() {
   const addToCart = (product: Product) => {
     let numPrice = 0;
     if (typeof product.PRECIO === 'string') {
-      numPrice = parseFloat(product.PRECIO.replace(/[-,]/g, ''));
-    } else {
+      const cleanPrice = product.PRECIO.replace(/[^\d.,]/g, '');
+      numPrice = parseFloat(cleanPrice.replace(',', '.'));
+    } else if (typeof product.PRECIO === 'number') {
       numPrice = product.PRECIO;
     }
-
+  
     const cartProduct = {
       id: product.id,
       name: product.NOMBRE,
       description: product.DETALLE || '',
       price: numPrice,
-      image: product.image || '/images/placeholder-product.jpg',
+      image: product.image || `https://via.placeholder.com/400x300/1a1a2e/ffffff?text=${encodeURIComponent(product.NOMBRE.substring(0, 15))}`,
       category: product.CATEGORIA,
       stock: true,
       quantity: 1
     };
-
+  
     // Obtener carrito actual del localStorage
     const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
     
@@ -193,28 +212,99 @@ export default function Products() {
     
     if (existingProductIndex > -1) {
       currentCart[existingProductIndex].quantity += 1;
+      showToast(
+        `Cantidad actualizada: ${product.NOMBRE} (${currentCart[existingProductIndex].quantity})`,
+        'info',
+        3000
+      );
     } else {
       currentCart.push(cartProduct);
+      showToast(
+        `${product.NOMBRE} agregado al carrito 🛒`,
+        'success',
+        3000
+      );
     }
     
     localStorage.setItem('cart', JSON.stringify(currentCart));
     window.dispatchEvent(new CustomEvent('cartUpdated'));
-    
-    alert(`${product.NOMBRE} agregado al carrito`);
+  
+    // Eliminar esta línea:
+    // alert(`${product.NOMBRE} agregado al carrito`);
   };
 
   const getProductImage = (product: Product) => {
-    // Mapeo básico de categorías a imágenes placeholder
-    const categoryImages: { [key: string]: string } = {
-      'Computadores & Cables': '/images/categories/computers.jpg',
-      'Consolas y Videojuegos': '/images/categories/gaming.jpg',
-      'Electrónica & Audio': '/images/categories/audio.jpg',
-      'Peluches': '/images/categories/plushies.jpg',
-      'Juguetes y Figuras': '/images/categories/figures.jpg',
-      'Bolsos y Modas': '/images/categories/fashion.jpg',
+    return `https://via.placeholder.com/400x300/1a1a2e/ffffff?text=${encodeURIComponent(product.NOMBRE.substring(0, 15))}`;
+  };
+
+  // Componente de paginación
+  const Pagination = () => {
+    if (totalPages <= 1) return null;
+
+    const getPageNumbers = () => {
+      const pages = [];
+      const showPages = 5;
+      
+      let start = Math.max(1, currentPage - Math.floor(showPages / 2));
+      let end = Math.min(totalPages, start + showPages - 1);
+      
+      if (end - start < showPages - 1) {
+        start = Math.max(1, end - showPages + 1);
+      }
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      
+      return pages;
     };
-    
-    return product.image || categoryImages[product.CATEGORIA] || '/images/placeholder-product.jpg';
+
+    return (
+      <div className="flex items-center justify-center gap-2 mt-12">
+        {/* Botón Anterior */}
+        <button
+          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+            currentPage === 1
+              ? 'bg-dark-800 text-gray-500 cursor-not-allowed'
+              : 'bg-dark-800 text-gray-300 hover:bg-primary-600 hover:text-white border border-dark-700'
+          }`}
+        >
+          <FiChevronLeft className="text-sm" />
+          <span className="hidden sm:inline">Anterior</span>
+        </button>
+
+        {/* Números de página */}
+        {getPageNumbers().map((page) => (
+          <button
+            key={page}
+            onClick={() => setCurrentPage(page)}
+            className={`w-10 h-10 rounded-lg transition-all ${
+              currentPage === page
+                ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/50'
+                : 'bg-dark-800 text-gray-300 hover:bg-primary-600 hover:text-white border border-dark-700'
+            }`}
+          >
+            {page}
+          </button>
+        ))}
+
+        {/* Botón Siguiente */}
+        <button
+          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+            currentPage === totalPages
+              ? 'bg-dark-800 text-gray-500 cursor-not-allowed'
+              : 'bg-dark-800 text-gray-300 hover:bg-primary-600 hover:text-white border border-dark-700'
+          }`}
+        >
+          <span className="hidden sm:inline">Siguiente</span>
+          <FiChevronRight className="text-sm" />
+        </button>
+      </div>
+    );
   };
 
   if (loading) {
@@ -249,6 +339,27 @@ export default function Products() {
       {/* Background Elements */}
       <div className="absolute top-10 right-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl" />
       <div className="absolute bottom-10 left-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+      
+      {/* Cart Button - Fixed */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, delay: 0.1 }}
+        className="fixed top-24 right-4 z-40"
+      >
+        <button
+          onClick={() => setIsCartOpen(true)}
+          className="bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white p-3 rounded-full shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60 transition-all duration-300 hover:scale-110"
+          aria-label="Abrir carrito de compras"
+        >
+          <FiShoppingCart className="text-xl" />
+          {cartCount > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
+              {cartCount}
+            </span>
+          )}
+        </button>
+      </motion.div>
       
       <div className="container mx-auto relative z-10">
         {/* Header */}
@@ -305,14 +416,19 @@ export default function Products() {
         {/* Products Count */}
         <div className="text-center mb-8">
           <p className="text-gray-400">
-            Mostrando {filteredProducts.length} de {products.length} productos
+            Mostrando {indexOfFirstProduct + 1}-{Math.min(indexOfLastProduct, filteredProducts.length)} de {filteredProducts.length} productos
+            {totalPages > 1 && (
+              <span className="ml-2">
+                (Página {currentPage} de {totalPages})
+              </span>
+            )}
           </p>
         </div>
 
         {/* Products Grid */}
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6 max-w-7xl mx-auto">
-          {filteredProducts.length > 0 ? (
-            filteredProducts.map((product, index) => (
+          {currentProducts.length > 0 ? (
+            currentProducts.map((product, index) => (
               <motion.div
                 key={product.id}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -320,7 +436,6 @@ export default function Products() {
                 transition={{ duration: 0.4, delay: index * 0.05 }}
                 whileHover={{ y: -12, scale: 1.03 }}
                 className="group cursor-pointer h-full"
-                onClick={() => window.location.href = `/productos/${product.id}`}
               >
                 <div className="bg-gradient-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden h-full hover:border-primary-400 hover:shadow-2xl hover:shadow-primary-500/30 transition-all duration-300 flex flex-col">
                   {/* Product Image */}
@@ -354,8 +469,8 @@ export default function Products() {
                     )}
 
                     {/* Precio destacado */}
-                    <div className="mb-3 md:mb-4 flex-grow flex items-end">
-                      <span className="text-2xl md:text-3xl font-extrabold text-primary-400">
+                    <div className="mb-3 md:mb-4 grow flex items-end">
+                      <span className="text-lg md:text-xl font-bold bg-gradient-to-r from-primary-400 to-primary-300 bg-clip-text text-transparent">
                         {formatPrice(product.PRECIO)}
                       </span>
                     </div>
@@ -388,6 +503,9 @@ export default function Products() {
           )}
         </div>
 
+        {/* Paginación */}
+        <Pagination />
+
         {/* Contact CTA */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -414,6 +532,12 @@ export default function Products() {
           </div>
         </motion.div>
       </div>
+
+      {/* Cart Component */}
+      <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      
+      {/* Toast Container - AGREGAR ESTA LÍNEA */}
+      <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
     </section>
   );
 }
