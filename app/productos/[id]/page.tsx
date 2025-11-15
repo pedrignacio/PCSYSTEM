@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,16 +22,30 @@ import {
   FiPackage,
   FiCreditCard,
   FiAward,
+  FiLoader,
 } from "react-icons/fi";
-import { getProductById, getRelatedProducts } from "@/data/products";
+import { supabase } from "@/lib/supabase";
 import Script from "next/script";
+
+interface Product {
+  id: number;
+  NOMBRE: string;
+  DETALLE?: string;
+  PRECIO: number | string;
+  CATEGORIA: string;
+  SUBCATEGORIA?: string;
+  image?: string;
+  stock?: boolean;
+}
 
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const productId = parseInt(params.id as string);
-  const product = getProductById(productId);
   
+  const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<"description" | "specs" | "reviews">("description");
@@ -39,6 +53,62 @@ export default function ProductDetailPage() {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [thumbnailsLoading, setThumbnailsLoading] = useState<{[key: number]: boolean}>({});
+
+  useEffect(() => {
+    if (productId) {
+      fetchProduct();
+    }
+  }, [productId]);
+
+  const fetchProduct = async () => {
+    try {
+      setLoading(true);
+      
+      // Obtener producto principal
+      const { data: productData, error: productError } = await supabase
+        .from('Productos')
+        .select('*')
+        .eq('id', productId)
+        .single();
+
+      if (productError) throw productError;
+      
+      setProduct(productData);
+
+      // Obtener productos relacionados de la misma categoría
+      if (productData) {
+        const { data: relatedData, error: relatedError } = await supabase
+          .from('Productos')
+          .select('*')
+          .eq('CATEGORIA', productData.CATEGORIA)
+          .neq('id', productId)
+          .limit(4);
+
+        if (!relatedError && relatedData) {
+          setRelatedProducts(relatedData);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching product:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <main className="min-h-screen pt-32 px-4 bg-dark-900 flex items-center justify-center">
+          <div className="text-center">
+            <FiLoader className="animate-spin text-4xl text-primary-500 mx-auto mb-4" />
+            <p className="text-xl text-gray-300">Cargando producto...</p>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   if (!product) {
     return (
@@ -73,25 +143,66 @@ export default function ProductDetailPage() {
     );
   }
 
-  const relatedProducts = getRelatedProducts(product.id, product.category);
-
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: number | string) => {
+    let numPrice = 0;
+    
+    if (typeof price === 'string') {
+      const cleanPrice = price.replace(/[^\d.,]/g, '');
+      numPrice = parseFloat(cleanPrice.replace(',', '.'));
+    } else if (typeof price === 'number') {
+      numPrice = price;
+    }
+    
+    if (isNaN(numPrice) || numPrice <= 0) {
+      numPrice = 0;
+    }
+    
     return new Intl.NumberFormat("es-CL", {
       style: "currency",
       currency: "CLP",
       minimumFractionDigits: 0,
-    }).format(price);
+    }).format(numPrice);
   };
 
   const handleAddToCart = () => {
-    alert(`${quantity} unidad(es) de ${product.name} agregado al carrito`);
+    let numPrice = 0;
+    if (typeof product.PRECIO === 'string') {
+      numPrice = parseFloat(product.PRECIO.replace(/[-,]/g, ''));
+    } else {
+      numPrice = product.PRECIO;
+    }
+
+    const cartProduct = {
+      id: product.id,
+      name: product.NOMBRE,
+      description: product.DETALLE || '',
+      price: numPrice,
+      image: (product.image || '/images/placeholder-product.jpg'),
+      category: product.CATEGORIA,
+      stock: true,
+      quantity: quantity
+    };
+
+    const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const existingProductIndex = currentCart.findIndex((item: any) => item.id === product.id);
+    
+    if (existingProductIndex > -1) {
+      currentCart[existingProductIndex].quantity += quantity;
+    } else {
+      currentCart.push(cartProduct);
+    }
+    
+    localStorage.setItem('cart', JSON.stringify(currentCart));
+    window.dispatchEvent(new CustomEvent('cartUpdated'));
+    
+    alert(`${quantity} unidad(es) de ${product.NOMBRE} agregado al carrito`);
   };
 
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: product.name,
-        text: product.description,
+        title: product.NOMBRE,
+        text: product.DETALLE || product.NOMBRE,
         url: window.location.href,
       });
     } else {
@@ -99,23 +210,25 @@ export default function ProductDetailPage() {
     }
   };
 
+  const productImages = product.image ? [product.image] : ['/images/placeholder-product.jpg'];
+
   const nextImage = () => {
     setImageLoading(true);
-    setSelectedImage((prev) => (prev + 1) % product.images.length);
+    setSelectedImage((prev) => (prev + 1) % productImages.length);
   };
 
   const prevImage = () => {
     setImageLoading(true);
-    setSelectedImage((prev) => (prev - 1 + product.images.length) % product.images.length);
+    setSelectedImage((prev) => (prev - 1 + productImages.length) % productImages.length);
   };
 
   // JSON-LD structured data para SEO
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
-    "name": product.name,
-    "image": product.images || [product.image],
-    "description": product.longDescription || product.description,
+    "name": product.NOMBRE,
+    "image": productImages,
+    "description": product.DETALLE || product.NOMBRE,
     "sku": `PCSYS-${product.id}`,
     "brand": {
       "@type": "Brand",
@@ -125,7 +238,7 @@ export default function ProductDetailPage() {
       "@type": "Offer",
       "url": `https://pcsystem.cl/productos/${product.id}`,
       "priceCurrency": "CLP",
-      "price": product.price,
+      "price": typeof product.PRECIO === 'string' ? parseFloat(product.PRECIO.replace(/[^\d.]/g, '')) : product.PRECIO,
       "itemCondition": "https://schema.org/NewCondition",
       "availability": product.stock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       "seller": {
@@ -133,14 +246,7 @@ export default function ProductDetailPage() {
         "name": "PCSystem Hualpén"
       }
     },
-    "aggregateRating": product.rating ? {
-      "@type": "AggregateRating",
-      "ratingValue": product.rating,
-      "reviewCount": product.reviews || 0,
-      "bestRating": "5",
-      "worstRating": "1"
-    } : undefined,
-    "category": product.category,
+    "category": product.CATEGORIA,
   };
 
   return (
@@ -171,7 +277,7 @@ export default function ProductDetailPage() {
               Productos
             </Link>
             <span>/</span>
-            <span className="text-white">{product.name}</span>
+            <span className="text-white">{product.NOMBRE}</span>
           </motion.div>
 
           {/* Main Product Section */}
@@ -215,8 +321,8 @@ export default function ProductDetailPage() {
                 )}
                 
                 <Image
-                  src={product.images[selectedImage]}
-                  alt={product.name}
+                  src={productImages[selectedImage]}
+                  alt={product.NOMBRE}
                   fill
                   className={`object-cover transition-all duration-500 group-hover:scale-105 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
                   priority
@@ -225,7 +331,7 @@ export default function ProductDetailPage() {
                 />
                 
                 {/* Navigation Arrows - Hidden on mobile, visible on hover desktop */}
-                {product.images.length > 1 && (
+                {productImages.length > 1 && (
                   <>
                     <button
                       onClick={prevImage}
@@ -255,7 +361,7 @@ export default function ProductDetailPage() {
                 
                 {/* Image Counter */}
                 <div className="absolute bottom-4 right-4 bg-dark-900/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-semibold border border-primary-500/30 z-10">
-                  {selectedImage + 1} / {product.images.length}
+                  {selectedImage + 1} / {productImages.length}
                 </div>
 
                 {/* Swipe Indicator (Mobile only) */}
@@ -273,7 +379,7 @@ export default function ProductDetailPage() {
 
               {/* Thumbnail Gallery */}
               <div className="grid grid-cols-4 gap-3">
-                {product.images.map((img, idx) => (
+                {productImages.map((img, idx) => (
                   <motion.button
                     key={idx}
                     onClick={() => {
@@ -295,7 +401,7 @@ export default function ProductDetailPage() {
                     
                     <Image 
                       src={img} 
-                      alt={`${product.name} ${idx + 1}`} 
+                      alt={`${product.NOMBRE} ${idx + 1}`} 
                       fill 
                       className={`object-cover transition-opacity duration-300 ${thumbnailsLoading[idx] !== false ? 'opacity-0' : 'opacity-100'}`}
                       onLoad={() => setThumbnailsLoading(prev => ({ ...prev, [idx]: false }))}
@@ -319,38 +425,7 @@ export default function ProductDetailPage() {
               className="flex flex-col"
             >
               <div className="flex items-start justify-between mb-4">
-                <h1 className="text-4xl md:text-5xl font-bold text-white">{product.name}</h1>
-                
-                {/* Tags */}
-                <div className="flex gap-2 flex-wrap">
-                  {product.tags.slice(0, 2).map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="text-xs px-3 py-1 bg-primary-500/20 border border-primary-500/50 rounded-full text-primary-300 font-semibold"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Rating */}
-              <div className="flex items-center gap-4 mb-6">
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <FiStar
-                      key={i}
-                      className={`${
-                        i < Math.floor(product.rating)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-600"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="text-gray-400">
-                  {product.rating} ({product.reviews} reseñas)
-                </span>
+                <h1 className="text-4xl md:text-5xl font-bold text-white">{product.NOMBRE}</h1>
               </div>
 
               {/* Price */}
@@ -359,7 +434,7 @@ export default function ProductDetailPage() {
                   <div>
                     <p className="text-sm text-gray-400 mb-1">Precio</p>
                     <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary-400 via-primary-300 to-blue-400 bg-clip-text text-transparent">
-                      {formatPrice(product.price)}
+                      {formatPrice(product.PRECIO)}
                     </div>
                   </div>
                   <div className="text-right">
@@ -370,14 +445,16 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Description */}
-              <p className="text-gray-300 text-lg mb-8 leading-relaxed">{product.longDescription}</p>
+              <p className="text-gray-300 text-lg mb-8 leading-relaxed">{product.DETALLE}</p>
 
               {/* Stock Info */}
               <div className="flex items-center gap-4 mb-8">
-                <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400">
-                  <FiCheck className="text-xl" />
-                  <span className="font-semibold">{product.stockQuantity} disponibles</span>
-                </div>
+                {product.stock && (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400">
+                    <FiCheck className="text-xl" />
+                    <span className="font-semibold">En stock</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 text-gray-400">
                   <FiPackage />
                   <span className="text-sm">Listo para envío</span>
@@ -398,22 +475,18 @@ export default function ProductDetailPage() {
                     <input
                       type="number"
                       min="1"
-                      max={product.stockQuantity}
                       value={quantity}
-                      onChange={(e) => setQuantity(Math.min(product.stockQuantity, Math.max(1, parseInt(e.target.value) || 1)))}
+                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                       className="w-full text-center text-2xl font-bold bg-dark-800 border-2 border-dark-700 rounded-lg py-2 focus:border-primary-500 focus:outline-none transition-colors"
                     />
                   </div>
                   <button
-                    onClick={() => setQuantity(Math.min(product.stockQuantity, quantity + 1))}
+                    onClick={() => setQuantity(quantity + 1)}
                     className="w-12 h-12 rounded-lg bg-dark-800 border-2 border-dark-700 hover:border-primary-500 hover:bg-dark-700 transition-all flex items-center justify-center text-xl font-bold"
                   >
                     +
                   </button>
                 </div>
-                <p className="text-xs text-gray-400 mt-2">
-                  Máximo {product.stockQuantity} unidades
-                </p>
               </div>
 
               {/* Action Buttons */}
@@ -550,7 +623,7 @@ export default function ProductDetailPage() {
                   activeTab === "reviews" ? "text-primary-400" : "text-gray-400 hover:text-white"
                 }`}
               >
-                Reseñas ({product.reviews})
+                Reseñas
                 {activeTab === "reviews" && (
                   <motion.div
                     layoutId="activeTab"
@@ -576,22 +649,8 @@ export default function ProductDetailPage() {
                       Características Principales
                     </h3>
                     <p className="text-gray-300 text-lg mb-6 leading-relaxed">
-                      {product.longDescription}
+                      {product.DETALLE}
                     </p>
-                    <ul className="grid md:grid-cols-2 gap-4">
-                      {product.features.map((feature, idx) => (
-                        <motion.li
-                          key={idx}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.1 }}
-                          className="flex items-start gap-3 p-4 bg-dark-900/50 rounded-lg border border-dark-700 hover:border-primary-500/50 transition-colors"
-                        >
-                          <FiCheck className="text-primary-400 text-xl mt-1 flex-shrink-0" />
-                          <span className="text-gray-300">{feature}</span>
-                        </motion.li>
-                      ))}
-                    </ul>
                   </div>
                 )}
 
@@ -600,19 +659,8 @@ export default function ProductDetailPage() {
                     <h3 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent">
                       Especificaciones Técnicas
                     </h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {Object.entries(product.specifications).map(([key, value], idx) => (
-                        <motion.div
-                          key={key}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: idx * 0.05 }}
-                          className="flex flex-col sm:flex-row sm:justify-between gap-2 p-5 bg-dark-900/50 rounded-xl border border-dark-700 hover:border-primary-500/50 transition-all hover:scale-105"
-                        >
-                          <span className="font-bold text-primary-300">{key}</span>
-                          <span className="text-white font-semibold">{value}</span>
-                        </motion.div>
-                      ))}
+                    <div className="p-6 bg-dark-900/50 rounded-xl border border-dark-700">
+                      <p className="text-gray-300">{product.DETALLE}</p>
                     </div>
                   </div>
                 )}
@@ -677,8 +725,8 @@ export default function ProductDetailPage() {
                     >
                       <div className="relative h-48 bg-gradient-to-br from-primary-600/20 via-dark-700 to-purple-600/20 overflow-hidden">
                         <Image
-                          src={relatedProduct.image}
-                          alt={relatedProduct.name}
+                          src={(relatedProduct.image || '/images/placeholder-product.jpg')}
+                          alt={relatedProduct.NOMBRE}
                           fill
                           className="object-cover group-hover:scale-110 transition-transform duration-500"
                           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
@@ -687,10 +735,10 @@ export default function ProductDetailPage() {
                       </div>
                       <div className="p-5">
                         <h3 className="font-bold mb-2 group-hover:text-primary-300 transition-colors line-clamp-2 text-white">
-                          {relatedProduct.name}
+                          {relatedProduct.NOMBRE}
                         </h3>
                         <p className="text-xl font-bold bg-gradient-to-r from-primary-400 to-primary-300 bg-clip-text text-transparent">
-                          {formatPrice(relatedProduct.price)}
+                          {formatPrice(relatedProduct.PRECIO)}
                         </p>
                       </div>
                     </motion.div>

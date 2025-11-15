@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { getProductById } from '@/data/products'
+import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 
 type Props = {
@@ -8,45 +8,55 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
-  const product = getProductById(parseInt(id))
   
-  if (!product) {
+  // Obtener producto de Supabase
+  const { data: product, error } = await supabase
+    .from('Productos')
+    .select('*')
+    .eq('id', parseInt(id))
+    .single()
+  
+  if (error || !product) {
     return {
       title: 'Producto no encontrado',
     }
   }
 
-  const title = `${product.name} - ${product.price.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}`
-  const description = product.longDescription || product.description || `Compra ${product.name} en PCSystem Hualpén. ${product.stock ? '✓ En stock' : 'Consultar disponibilidad'}.`
+  const formatPrice = (price: number | string) => {
+    let numPrice = 0;
+    if (typeof price === 'string') {
+      numPrice = parseFloat(price.replace(/[^\d.,]/g, '').replace(',', '.'));
+    } else {
+      numPrice = price;
+    }
+    return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(numPrice);
+  };
+
+  const title = `${product.NOMBRE} - ${formatPrice(product.PRECIO)}`
+  const description = product.DETALLE || `Compra ${product.NOMBRE} en PCSystem Hualpén. ${product.stock ? '✓ En stock' : 'Consultar disponibilidad'}.`
 
   return {
     title,
     description,
     keywords: [
-      product.name,
-      ...product.tags || [],
-      product.category,
+      product.NOMBRE,
+      product.CATEGORIA,
+      product.SUBCATEGORIA,
       'PCSystem',
       'Hualpén',
       'comprar',
       'tienda tecnología'
-    ],
+    ].filter(Boolean),
     openGraph: {
       title,
       description,
       images: [
         {
-          url: product.image,
+          url: product.image || '/images/placeholder-product.jpg',
           width: 800,
           height: 600,
-          alt: product.name,
-        },
-        ...(product.images?.map(img => ({
-          url: img,
-          width: 800,
-          height: 600,
-          alt: product.name,
-        })) || [])
+          alt: product.NOMBRE,
+        }
       ],
       type: 'website',
       locale: 'es_CL',
@@ -56,7 +66,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: 'summary_large_image',
       title,
       description,
-      images: [product.image],
+      images: [product.image || '/images/placeholder-product.jpg'],
     },
     alternates: {
       canonical: `https://pcsystem.cl/productos/${id}`,

@@ -320,6 +320,7 @@ export default function Products() {
                 transition={{ duration: 0.4, delay: index * 0.05 }}
                 whileHover={{ y: -12, scale: 1.03 }}
                 className="group cursor-pointer h-full"
+                onClick={() => window.location.href = `/productos/${product.id}`}
               >
                 <div className="bg-gradient-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden h-full hover:border-primary-400 hover:shadow-2xl hover:shadow-primary-500/30 transition-all duration-300 flex flex-col">
                   {/* Product Image */}
@@ -359,7 +360,10 @@ export default function Products() {
                     </div>
 
                     <button
-                      onClick={() => addToCart(product)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addToCart(product);
+                      }}
                       className="w-full flex items-center justify-center gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-2.5 rounded-lg transition-all duration-300 text-xs md:text-base font-semibold shadow-lg mt-auto bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white shadow-primary-600/40 hover:shadow-primary-500/60 hover:scale-105"
                     >
                       <FiShoppingCart className="text-sm md:text-base" />
