@@ -31,21 +31,17 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
-        router.push("/admin");
-      } else {
-        setError("Credenciales incorrectas. Por favor, intenta de nuevo.");
-      }
-    } catch (err) {
-      setError("Ocurrió un error. Por favor, intenta más tarde.");
+      await login(email, password);
+      router.push("/admin");
+    } catch (err: any) {
+      setError(err.message || "Credenciales incorrectas. Por favor, intenta de nuevo.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center px-4 py-12">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary-200 rounded-full opacity-20 blur-3xl" />
@@ -76,7 +72,7 @@ export default function LoginPage() {
           className="bg-white rounded-3xl shadow-2xl shadow-gray-300/50 overflow-hidden"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-primary-600 to-purple-600 px-8 py-10 text-center">
+          <div className="bg-linear-to-r from-primary-600 to-purple-600 px-8 py-10 text-center">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
@@ -162,7 +158,7 @@ export default function LoginPage() {
                   animate={{ opacity: 1, y: 0 }}
                   className="flex items-center gap-3 p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700"
                 >
-                  <FiAlertCircle className="text-xl flex-shrink-0" />
+                  <FiAlertCircle className="text-xl shrink-0" />
                   <p className="text-sm font-medium">{error}</p>
                 </motion.div>
               )}
@@ -176,7 +172,7 @@ export default function LoginPage() {
                 className={`w-full flex items-center justify-center gap-3 py-4 rounded-xl font-bold text-lg shadow-lg transition-all ${
                   isLoading
                     ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 shadow-primary-500/30 hover:shadow-primary-500/50"
+                    : "bg-linear-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 shadow-primary-500/30 hover:shadow-primary-500/50"
                 } text-white`}
               >
                 {isLoading ? (

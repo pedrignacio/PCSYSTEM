@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { FiSmartphone, FiShoppingCart } from "react-icons/fi";
+import { supabase } from '../lib/supabase'
 
 interface ProductCardProps {
   id: number;

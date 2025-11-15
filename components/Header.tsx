@@ -6,6 +6,7 @@ import { FiMenu, FiX, FiPhone, FiLogIn, FiLogOut, FiShield } from "react-icons/f
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from '../lib/supabase'
 
 const navItems = [
   { name: "Inicio", href: "/" },

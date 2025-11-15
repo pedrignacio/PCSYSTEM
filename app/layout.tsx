@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { supabase } from '../lib/supabase'
 
 const inter = Inter({ subsets: ["latin"] });
 
