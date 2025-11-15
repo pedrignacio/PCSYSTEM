@@ -17,6 +17,11 @@ export const metadata: Metadata = {
     template: "%s | PCSystem Hualpén"
   },
   description: "Servicio técnico de computadores, notebooks y consolas en Hualpén. Reparación, mantenimiento, instalación de redes, cámaras de seguridad y venta de componentes PC. ¡Atención personalizada!",
+  icons: {
+    icon: '/logo-hero.png',
+    shortcut: '/logo-hero.png',
+    apple: '/logo-hero.png',
+  },
   keywords: [
     "servicio técnico Hualpén",
     "reparación computadores Hualpén",
