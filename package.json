@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p ${PORT:-3001} ",
+    "dev": "next dev -p 3002",
     "build": "next build",
-    "start": "next start -p ${PORT:-3001}",
+    "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@supabase/supabase-js": "^2.81.1",
     "@vercel/analytics": "^1.5.0",
     "framer-motion": "^12.23.24",
     "next": "16.0.1",
@@ -29,5 +30,9 @@
     "gh-pages": "^6.3.0",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://rcoidalvbeceargshivj.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjb2lkYWx2YmVjZWFyZ3NoaXZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNDc1OTQsImV4cCI6MjA3ODcyMzU5NH0.D62abnxSnu3aebKYn0kCdTxF19qCV1Xbr_a3SA7vVNs"
   }
 }
