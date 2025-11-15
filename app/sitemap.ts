@@ -1,11 +1,11 @@
 import { MetadataRoute } from 'next'
-import { products } from '@/data/products'
+import { supabase } from '@/lib/supabase'
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://pcsystem.cl'
   
   // Páginas estáticas
-  const staticPages = [
+  const staticPages: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: new Date(),
@@ -44,9 +44,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ]
 
+  // Obtener productos desde Supabase
+  const { data: products, error } = await supabase
+    .from('PRODUCTOS')
+    .select('ID')
+
+  if (error || !products) {
+    console.error('Error fetching products for sitemap:', error)
+    return staticPages
+  }
+
   // Páginas dinámicas de productos
-  const productPages = products.map((product) => ({
-    url: `${baseUrl}/productos/${product.id}`,
+  const productPages: MetadataRoute.Sitemap = products.map((product) => ({
+    url: `${baseUrl}/productos/${product.ID}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,
     priority: 0.8,
