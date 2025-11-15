@@ -12,11 +12,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Solo usar basePath en producción
-  ...(process.env.NODE_ENV === 'production' && {
-    basePath: '/PCSYSTEM',
-    assetPrefix: '/PCSYSTEM/',
-  }),
+  distDir: 'out',
 };
 
 export default nextConfig;
