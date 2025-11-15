@@ -51,32 +51,6 @@ export default function Header() {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-3">
-          {isAuthenticated ? (
-            <>
-              <Link
-                href="/admin"
-                className="flex items-center gap-2 px-4 py-2.5 bg-primary-600/20 border border-primary-500/50 text-primary-400 hover:bg-primary-600/30 rounded-lg transition-all font-semibold"
-              >
-                <FiShield />
-                <span>Admin</span>
-              </Link>
-              <button
-                onClick={logout}
-                className="flex items-center gap-2 px-4 py-2.5 bg-red-600/20 border border-red-500/50 text-red-400 hover:bg-red-600/30 rounded-lg transition-all font-semibold"
-              >
-                <FiLogOut />
-                <span>Salir</span>
-              </button>
-            </>
-          ) : (
-            <Link
-              href="/login"
-              className="flex items-center gap-2 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-lg transition-all font-semibold"
-            >
-              <FiLogIn />
-              <span>Admin</span>
-            </Link>
-          )}
           <a
             href="https://wa.me/56989142836"
             target="_blank"
@@ -119,45 +93,6 @@ export default function Header() {
                   </Link>
                 </li>
               ))}
-              
-              {/* Mobile Auth Buttons */}
-              {isAuthenticated ? (
-                <>
-                  <li>
-                    <Link
-                      href="/admin"
-                      onClick={() => setIsOpen(false)}
-                      className="flex items-center justify-center gap-2 bg-primary-600/20 border border-primary-500/50 text-primary-400 px-5 py-3 rounded-lg transition-all font-semibold"
-                    >
-                      <FiShield />
-                      <span>Panel Admin</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => {
-                        logout();
-                        setIsOpen(false);
-                      }}
-                      className="w-full flex items-center justify-center gap-2 bg-red-600/20 border border-red-500/50 text-red-400 px-5 py-3 rounded-lg transition-all font-semibold"
-                    >
-                      <FiLogOut />
-                      <span>Cerrar Sesión</span>
-                    </button>
-                  </li>
-                </>
-              ) : (
-                <li>
-                  <Link
-                    href="/login"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center justify-center gap-2 bg-gray-700 border border-gray-600 px-5 py-3 rounded-lg transition-all font-semibold"
-                  >
-                    <FiLogIn />
-                    <span>Acceso Admin</span>
-                  </Link>
-                </li>
-              )}
               
               <li>
                 <a

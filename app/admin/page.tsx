@@ -20,6 +20,7 @@ import {
   FiAlertCircle,
   FiCheck,
   FiSearch,
+  FiLogOut,
 } from "react-icons/fi";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
@@ -55,7 +56,7 @@ const categories = [
 ];
 
 export default function AdminPage() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, logout } = useAuth();
   const router = useRouter();
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -362,9 +363,18 @@ export default function AdminPage() {
           </AnimatePresence>
 
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-white mb-2">Panel de Administración</h1>
-            <p className="text-gray-400">Gestiona tus productos</p>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-white mb-2">Panel de Administración</h1>
+              <p className="text-gray-400">Gestiona tus productos</p>
+            </div>
+            <button
+              onClick={logout}
+              className="flex items-center gap-2 px-6 py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-400 rounded-lg transition-all font-semibold"
+            >
+              <FiLogOut />
+              <span>Cerrar Sesión</span>
+            </button>
           </div>
 
           {/* Stats */}

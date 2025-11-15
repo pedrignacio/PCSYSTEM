@@ -193,25 +193,8 @@ export default function LoginPage() {
               </motion.button>
             </form>
 
-            {/* Demo Credentials Info */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="mt-8 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl"
-            >
-              <p className="text-sm font-semibold text-blue-900 mb-2">
-                🔐 Credenciales de prueba:
-              </p>
-              <div className="space-y-1 text-xs text-blue-700">
-                <p>
-                  <strong>Email:</strong> admin@pcsystem.cl
-                </p>
-                <p>
-                  <strong>Contraseña:</strong> admin123
-                </p>
-              </div>
-            </motion.div>
+            {/* Info */}
+        
           </div>
         </motion.div>
 
@@ -222,9 +205,7 @@ export default function LoginPage() {
           transition={{ delay: 0.8 }}
           className="mt-8 text-center"
         >
-          <p className="text-gray-600 text-sm">
-            © 2025 PCSystem. Todos los derechos reservados.
-          </p>
+      
         </motion.div>
       </div>
     </div>

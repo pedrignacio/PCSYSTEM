@@ -2,11 +2,12 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 interface User {
   id: string;
   email: string;
-  name: string;
+  name?: string;
   role: string;
 }
 
@@ -26,36 +27,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Verificar si hay una sesión guardada al cargar
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setIsLoading(false);
+    // Verificar sesión actual
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          name: session.user.user_metadata?.name || session.user.email,
+          role: session.user.user_metadata?.role || 'admin',
+        });
+      }
+      setIsLoading(false);
+    };
+
+    checkSession();
+
+    // Escuchar cambios de autenticación
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          name: session.user.user_metadata?.name || session.user.email,
+          role: session.user.user_metadata?.role || 'admin',
+        });
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Credenciales hardcodeadas (en producción usar API real)
-    const ADMIN_EMAIL = "admin@pcsystem.cl";
-    const ADMIN_PASSWORD = "admin123";
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      const userData: User = {
-        id: "1",
-        email: ADMIN_EMAIL,
-        name: "Administrador",
-        role: "admin",
-      };
-      setUser(userData);
-      localStorage.setItem("user", JSON.stringify(userData));
-      return true;
+      if (error) {
+        console.error("Error en login:", error.message);
+        return false;
+      }
+
+      if (data.user) {
+        setUser({
+          id: data.user.id,
+          email: data.user.email!,
+          name: data.user.user_metadata?.name || data.user.email,
+          role: data.user.user_metadata?.role || 'admin',
+        });
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error("Error inesperado en login:", error);
+      return false;
     }
-    return false;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem("user");
     router.push("/");
   };
 
