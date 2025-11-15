@@ -28,7 +28,7 @@ export default function Header() {
           <Image
             src="/logo-hero.png"
             alt="PCSystem - Ciber y Servicio Técnico"
-            width={240}
+            width={241}
             height={80}
             className="h-16 w-auto object-contain brightness-110"
             priority
