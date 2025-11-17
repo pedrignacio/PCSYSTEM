@@ -30,7 +30,7 @@ export default function Header() {
             alt="PCSystem - Ciber y Servicio Técnico"
             width={240}
             height={80}
-            className="h-16 w-auto object-contain brightness-110"
+            className="h-14 w-auto object-contain brightness-110"
             priority
           />
         </Link>

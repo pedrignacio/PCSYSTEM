@@ -52,7 +52,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       images: [
         {
-          url: product.image || '/images/placeholder-product.jpg',
+          url: mainImage,
           width: 800,
           height: 600,
           alt: product.NOMBRE,
@@ -66,7 +66,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: 'summary_large_image',
       title,
       description,
-      images: [product.image || '/images/placeholder-product.jpg'],
+      images: [mainImage],
     },
     alternates: {
       canonical: `https://pcsystem.cl/productos/${id}`,

@@ -177,7 +177,7 @@ export default function ProductDetailPage() {
       name: product.NOMBRE,
       description: product.DETALLE || '',
       price: numPrice,
-      image: (product.image || '/images/placeholder-product.jpg'),
+      image: productImages[0],
       category: product.CATEGORIA,
       stock: true,
       quantity: quantity
@@ -210,7 +210,9 @@ export default function ProductDetailPage() {
     }
   };
 
-  const productImages = product.image ? [product.image] : ['/images/placeholder-product.jpg'];
+  const imagenes = (product as any).IMAGENES || {};
+  const images = imagenes.images || [];
+  const productImages = images.length > 0 ? images : ['/images/placeholder-product.jpg'];
 
   const nextImage = () => {
     setImageLoading(true);
@@ -725,7 +727,12 @@ export default function ProductDetailPage() {
                     >
                       <div className="relative h-48 bg-gradient-to-br from-primary-600/20 via-dark-700 to-purple-600/20 overflow-hidden">
                         <Image
-                          src={(relatedProduct.image || '/images/placeholder-product.jpg')}
+                          src={(() => {
+                            const imagenes = (relatedProduct as any).IMAGENES || {};
+                            const images = imagenes.images || [];
+                            const mainIndex = imagenes.mainImageIndex || 0;
+                            return images[mainIndex] || images[0] || '/images/placeholder-product.jpg';
+                          })()}
                           alt={relatedProduct.NOMBRE}
                           fill
                           className="object-cover group-hover:scale-110 transition-transform duration-500"

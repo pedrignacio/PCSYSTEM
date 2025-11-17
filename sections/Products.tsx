@@ -30,7 +30,6 @@ interface Product {
   PRECIO: number | string;
   CATEGORIA: string;
   SUBCATEGORIA?: string;
-  image?: string;
   stock?: boolean;
 }
 
@@ -184,6 +183,13 @@ export default function Products() {
     }).format(numPrice);
   };
 
+  const getMainImage = (product: any) => {
+    const imagenes = product.IMAGENES || {};
+    const images = imagenes.images || [];
+    const mainIndex = imagenes.mainImageIndex || 0;
+    return images[mainIndex] || images[0] || `https://via.placeholder.com/400x300/1a1a2e/ffffff?text=${encodeURIComponent(product.NOMBRE.substring(0, 15))}`;
+  };
+
   const addToCart = (product: Product) => {
     let numPrice = 0;
     if (typeof product.PRECIO === 'string') {
@@ -193,12 +199,17 @@ export default function Products() {
       numPrice = product.PRECIO;
     }
   
+    const imagenes = (product as any).IMAGENES || {};
+    const images = imagenes.images || [];
+    const mainIndex = imagenes.mainImageIndex || 0;
+    const mainImage = images[mainIndex] || images[0] || `https://via.placeholder.com/400x300/1a1a2e/ffffff?text=${encodeURIComponent(product.NOMBRE.substring(0, 15))}`;
+    
     const cartProduct = {
       id: product.id,
       name: product.NOMBRE,
       description: product.DETALLE || '',
       price: numPrice,
-      image: product.image || `https://via.placeholder.com/400x300/1a1a2e/ffffff?text=${encodeURIComponent(product.NOMBRE.substring(0, 15))}`,
+      image: mainImage,
       category: product.CATEGORIA,
       stock: true,
       quantity: 1
@@ -233,8 +244,11 @@ export default function Products() {
     // alert(`${product.NOMBRE} agregado al carrito`);
   };
 
-  const getProductImage = (product: Product) => {
-    return `https://via.placeholder.com/400x300/1a1a2e/ffffff?text=${encodeURIComponent(product.NOMBRE.substring(0, 15))}`;
+  const getProductImage = (product: any) => {
+    const imagenes = product.IMAGENES || {};
+    const images = imagenes.images || [];
+    const mainIndex = imagenes.mainImageIndex || 0;
+    return images[mainIndex] || images[0] || `https://via.placeholder.com/400x300/1a1a2e/ffffff?text=${encodeURIComponent(product.NOMBRE.substring(0, 15))}`;
   };
 
   // Componente de paginación
@@ -436,6 +450,7 @@ export default function Products() {
                 transition={{ duration: 0.4, delay: index * 0.05 }}
                 whileHover={{ y: -12, scale: 1.03 }}
                 className="group cursor-pointer h-full"
+                onClick={() => window.location.href = `/productos/${product.id}`}
               >
                 <div className="bg-gradient-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden h-full hover:border-primary-400 hover:shadow-2xl hover:shadow-primary-500/30 transition-all duration-300 flex flex-col">
                   {/* Product Image */}

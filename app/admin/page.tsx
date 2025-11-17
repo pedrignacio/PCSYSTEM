@@ -32,9 +32,9 @@ interface Product {
   PRECIO: number | string;
   CATEGORIA: string;
   SUBCATEGORIA?: string;
-  image?: string;
   images?: string[];
   videos?: string[];
+  mainImageIndex?: number;
   stock?: boolean;
 }
 
@@ -74,9 +74,9 @@ export default function AdminPage() {
     PRECIO: "",
     DETALLE: "",
     SUBCATEGORIA: "",
-    image: "",
     images: [],
     videos: [],
+    mainImageIndex: 0,
     stock: true,
   });
 
@@ -127,7 +127,10 @@ export default function AdminPage() {
 
       const { error: uploadError } = await supabase.storage
         .from('Imagenes')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) throw uploadError;
 
@@ -155,11 +158,13 @@ export default function AdminPage() {
 
     const url = await uploadFile(file, 'images');
     if (url) {
-      setProductForm(prev => ({
-        ...prev,
-        image: prev.image || url,
-        images: [...(prev.images || []), url]
-      }));
+      setProductForm(prev => {
+        const currentImages = prev.images || [];
+        return {
+          ...prev,
+          images: [...currentImages, url]
+        };
+      });
       showSuccess('Imagen subida exitosamente');
     }
   };
@@ -175,10 +180,13 @@ export default function AdminPage() {
 
     const url = await uploadFile(file, 'videos');
     if (url) {
-      setProductForm(prev => ({
-        ...prev,
-        videos: [...(prev.videos || []), url]
-      }));
+      setProductForm(prev => {
+        const currentVideos = prev.videos || [];
+        return {
+          ...prev,
+          videos: [...currentVideos, url]
+        };
+      });
       showSuccess('Video subido exitosamente');
     }
   };
@@ -186,10 +194,11 @@ export default function AdminPage() {
   const removeImage = (index: number) => {
     setProductForm(prev => {
       const newImages = prev.images?.filter((_, i) => i !== index) || [];
+      const newMainIndex = prev.mainImageIndex === index ? 0 : (prev.mainImageIndex! > index ? prev.mainImageIndex! - 1 : prev.mainImageIndex);
       return {
         ...prev,
         images: newImages,
-        image: newImages[0] || ""
+        mainImageIndex: newMainIndex
       };
     });
   };
@@ -219,9 +228,9 @@ export default function AdminPage() {
       PRECIO: "",
       DETALLE: "",
       SUBCATEGORIA: "",
-      image: "",
       images: [],
       videos: [],
+      mainImageIndex: 0,
       stock: true,
     });
     setShowProductModal(true);
@@ -229,10 +238,12 @@ export default function AdminPage() {
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
+    const imagenes = (product as any).IMAGENES || {};
     setProductForm({
       ...product,
-      images: product.images || [],
-      videos: product.videos || []
+      images: imagenes.images || [],
+      videos: imagenes.videos || [],
+      mainImageIndex: imagenes.mainImageIndex || 0
     });
     setShowProductModal(true);
   };
@@ -252,7 +263,11 @@ export default function AdminPage() {
         PRECIO: typeof productForm.PRECIO === 'string' ? parseFloat(productForm.PRECIO) : productForm.PRECIO,
         CATEGORIA: productForm.CATEGORIA,
         SUBCATEGORIA: productForm.SUBCATEGORIA || null,
-        image: productForm.image || null,
+        IMAGENES: {
+          images: productForm.images || [],
+          videos: productForm.videos || [],
+          mainImageIndex: productForm.mainImageIndex || 0
+        },
         stock: productForm.stock
       };
 
@@ -443,18 +458,24 @@ export default function AdminPage() {
                       <tr key={product.id} className="hover:bg-dark-700/50 transition-colors">
                         <td className="px-6 py-4">
                           <div className="w-16 h-16 relative bg-dark-700 rounded-lg overflow-hidden">
-                            {product.image ? (
-                              <Image
-                                src={product.image}
-                                alt={product.NOMBRE}
-                                fill
-                                className="object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <FiImage className="text-gray-600" />
-                              </div>
-                            )}
+                            {(() => {
+                              const imagenes = (product as any).IMAGENES || {};
+                              const images = imagenes.images || [];
+                              const mainIndex = imagenes.mainImageIndex || 0;
+                              const mainImage = images[mainIndex];
+                              return mainImage ? (
+                                <Image
+                                  src={mainImage}
+                                  alt={product.NOMBRE}
+                                  fill
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <FiImage className="text-gray-600" />
+                                </div>
+                              );
+                            })()}
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -622,16 +643,30 @@ export default function AdminPage() {
                         <div className="grid grid-cols-4 gap-4">
                           {productForm.images.map((img, idx) => (
                             <div key={idx} className="relative group">
-                              <Image
-                                src={img}
-                                alt={`Imagen ${idx + 1}`}
-                                width={200}
-                                height={200}
-                                className="w-full h-32 object-cover rounded-lg"
-                              />
+                              <div 
+                                className={`relative cursor-pointer border-4 rounded-lg overflow-hidden ${
+                                  productForm.mainImageIndex === idx 
+                                    ? 'border-primary-500 shadow-lg shadow-primary-500/50' 
+                                    : 'border-transparent hover:border-primary-500/50'
+                                }`}
+                                onClick={() => setProductForm({ ...productForm, mainImageIndex: idx })}
+                              >
+                                <Image
+                                  src={img}
+                                  alt={`Imagen ${idx + 1}`}
+                                  width={200}
+                                  height={200}
+                                  className="w-full h-32 object-cover"
+                                />
+                                {productForm.mainImageIndex === idx && (
+                                  <div className="absolute top-2 left-2 bg-primary-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                                    Principal
+                                  </div>
+                                )}
+                              </div>
                               <button
                                 onClick={() => removeImage(idx)}
-                                className="absolute top-2 right-2 p-1 bg-red-500 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="absolute top-2 right-2 p-1 bg-red-500 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
                               >
                                 <FiX className="text-white" />
                               </button>
