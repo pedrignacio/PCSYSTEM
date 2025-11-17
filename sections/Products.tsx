@@ -469,8 +469,8 @@ export default function Products() {
                     )}
 
                     {/* Precio destacado */}
-                    <div className="mb-3 md:mb-4 grow flex items-end">
-                      <span className="text-lg md:text-xl font-bold bg-gradient-to-r from-primary-400 to-primary-300 bg-clip-text text-transparent">
+                    <div className="mb-3 md:mb-4 flex-grow flex items-end">
+                      <span className="text-2xl md:text-3xl font-extrabold text-primary-400">
                         {formatPrice(product.PRECIO)}
                       </span>
                     </div>
