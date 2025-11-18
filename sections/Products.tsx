@@ -471,27 +471,25 @@ export default function Products() {
               >
                 <div className="bg-gradient-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden h-full hover:border-primary-400 hover:shadow-2xl hover:shadow-primary-500/30 transition-all duration-300 flex flex-col">
                   {/* Product Image */}
-                  <div className="relative h-36 md:h-48 shrink-0 overflow-hidden">
+                  <div className="relative h-36 md:h-48 shrink-0 overflow-hidden bg-dark-900">
                     {getProductImage(product) ? (
                       <>
                         {/* Blurred background matching the image */}
-                        <Image
-                          src={getProductImage(product)!}
-                          alt=""
-                          fill
-                          className="object-cover blur-3xl scale-110 opacity-60"
-                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                          loading="lazy"
+                        <div 
+                          className="absolute inset-0 bg-cover bg-center blur-3xl scale-110 opacity-60"
+                          style={{ backgroundImage: `url(${getProductImage(product)})` }}
                         />
                         {/* Actual image on top */}
-                        <Image
-                          src={getProductImage(product)!}
-                          alt={product.NOMBRE}
-                          fill
-                          className="object-contain group-hover:scale-110 transition-transform duration-500 relative z-10"
-                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                          loading="lazy"
-                        />
+                        <div className="relative z-10 w-full h-full">
+                          <Image
+                            src={getProductImage(product)!}
+                            alt={product.NOMBRE}
+                            fill
+                            className="object-cover object-top group-hover:scale-110 transition-transform duration-500"
+                            sizes="(max-width: 768px) 180px, (max-width: 1024px) 240px, 280px"
+                            loading="lazy"
+                          />
+                        </div>
                       </>
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center text-gray-500">
