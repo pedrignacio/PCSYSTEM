@@ -67,6 +67,7 @@ export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -106,12 +107,14 @@ export default function AdminPage() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    const filtered = products.filter(p =>
-      p.NOMBRE.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.CATEGORIA.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filtered = products.filter(p => {
+      const matchesCategory = selectedCategory === "all" || p.CATEGORIA === selectedCategory;
+      const matchesSearch = p.NOMBRE.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           p.CATEGORIA.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
     setFilteredProducts(filtered);
-  }, [searchTerm, products]);
+  }, [searchTerm, selectedCategory, products]);
 
   const fetchProducts = async () => {
     try {
@@ -575,8 +578,37 @@ export default function AdminPage() {
           </div>
 
           {/* Search and Add Button */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1 relative">
+          <div className="flex flex-col gap-4 mb-6">
+            {/* Category Filter */}
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedCategory("all")}
+                className={`px-4 py-2 rounded-lg transition-all duration-300 text-sm font-medium ${
+                  selectedCategory === "all"
+                    ? "bg-primary-500 text-white shadow-lg shadow-primary-500/50"
+                    : "bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700"
+                }`}
+              >
+                Todos
+              </button>
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-4 py-2 rounded-lg transition-all duration-300 text-sm font-medium ${
+                    selectedCategory === category
+                      ? "bg-primary-500 text-white shadow-lg shadow-primary-500/50"
+                      : "bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700"
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+
+            {/* Search and Buttons */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative">
               <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
@@ -603,6 +635,7 @@ export default function AdminPage() {
               <FiPlus />
               Agregar Producto
             </button>
+            </div>
           </div>
 
           {/* Products Table */}
