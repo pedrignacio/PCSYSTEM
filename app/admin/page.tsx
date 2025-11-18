@@ -999,7 +999,7 @@ export default function AdminPage() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-dark-800 rounded-2xl w-full max-w-4xl max-h-[90vh] border border-dark-700 flex flex-col"
+                className="bg-dark-800 rounded-2xl w-full max-w-7xl max-h-[90vh] border border-dark-700 flex flex-col"
               >
                 {/* Header */}
                 <div className="bg-dark-800 border-b border-dark-700 p-6 flex items-center justify-between">
@@ -1031,7 +1031,7 @@ export default function AdminPage() {
 
                 {/* Products List */}
                 <div className="flex-1 overflow-y-auto p-6">
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
                     {orderedProducts
                       .filter((p) =>
                         p.NOMBRE?.toLowerCase().includes(positionSearchTerm.toLowerCase()) ||
@@ -1062,37 +1062,42 @@ export default function AdminPage() {
                               }
                               setDraggedItem(null);
                             }}
-                            className={`flex items-center gap-4 p-4 bg-dark-700 rounded-lg border-2 transition-all cursor-move hover:border-primary-500/50 ${
+                            className={`flex flex-col gap-2 p-2 bg-dark-700 rounded-lg border-2 transition-all cursor-move hover:border-primary-500/50 hover:scale-105 ${
                               draggedItem === actualIndex
-                                ? 'border-primary-500 opacity-50'
+                                ? 'border-primary-500 opacity-50 scale-95'
                                 : 'border-dark-600'
                             }`}
                           >
-                            <div className="flex items-center justify-center w-12 h-12 bg-dark-600 rounded-lg text-white font-bold text-lg">
+                            {/* Position Badge */}
+                            <div className="flex items-center justify-center w-6 h-6 bg-gradient-to-br from-primary-500 to-purple-600 rounded text-white font-bold text-xs shadow-lg shadow-primary-500/50">
                               {actualIndex + 1}
                             </div>
                             
-                            {mainImage && (
-                              <div className="w-16 h-16 relative bg-dark-600 rounded-lg overflow-hidden shrink-0">
+                            {/* Product Image */}
+                            <div className="relative w-full aspect-square bg-dark-600 rounded overflow-hidden">
+                              {mainImage ? (
                                 <Image
                                   src={mainImage}
                                   alt={product.NOMBRE}
                                   fill
                                   className="object-cover"
-                                  sizes="64px"
+                                  sizes="150px"
                                 />
-                              </div>
-                            )}
-
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-white font-semibold truncate">{product.NOMBRE}</h3>
-                              <p className="text-gray-400 text-sm">{product.CATEGORIA}</p>
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-500">
+                                  <FiImage className="text-xl" />
+                                </div>
+                              )}
                             </div>
 
-                            <div className="text-right">
-                              <p className="text-primary-400 font-bold">
+                            {/* Product Info */}
+                            <div className="flex-1">
+                              <h3 className="text-white font-semibold text-xs mb-0.5 line-clamp-2 leading-tight" title={product.NOMBRE}>
+                                {product.NOMBRE}
+                              </h3>
+                              <p className="text-primary-400 font-bold text-xs">
                                 {typeof product.PRECIO === 'number'
-                                  ? `$${product.PRECIO.toLocaleString('es-CL')}`
+                                  ? `$${(product.PRECIO / 1000).toFixed(0)}k`
                                   : product.PRECIO}
                               </p>
                             </div>
