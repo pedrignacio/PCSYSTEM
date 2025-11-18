@@ -106,6 +106,7 @@ export default function Products() {
       const { data, error } = await supabase
         .from('Productos')
         .select('*')
+        .order('POSICION', { ascending: true })
         .order('id', { ascending: true });
 
       if (error) throw error;
@@ -187,7 +188,7 @@ export default function Products() {
     const imagenes = product.IMAGENES || {};
     const images = imagenes.images || [];
     const mainIndex = imagenes.mainImageIndex || 0;
-    return images[mainIndex] || images[0] || `https://via.placeholder.com/400x300/1a1a2e/ffffff?text=${encodeURIComponent(product.NOMBRE.substring(0, 15))}`;
+    return images[mainIndex] || images[0] || null;
   };
 
   const addToCart = (product: Product) => {
@@ -202,7 +203,7 @@ export default function Products() {
     const imagenes = (product as any).IMAGENES || {};
     const images = imagenes.images || [];
     const mainIndex = imagenes.mainImageIndex || 0;
-    const mainImage = images[mainIndex] || images[0] || `https://via.placeholder.com/400x300/1a1a2e/ffffff?text=${encodeURIComponent(product.NOMBRE.substring(0, 15))}`;
+    const mainImage = images[mainIndex] || images[0] || null;
     
     const cartProduct = {
       id: product.id,
@@ -248,7 +249,23 @@ export default function Products() {
     const imagenes = product.IMAGENES || {};
     const images = imagenes.images || [];
     const mainIndex = imagenes.mainImageIndex || 0;
-    return images[mainIndex] || images[0] || `https://via.placeholder.com/400x300/1a1a2e/ffffff?text=${encodeURIComponent(product.NOMBRE.substring(0, 15))}`;
+    return images[mainIndex] || images[0] || null;
+  };
+
+  const getImageAspectRatio = (product: any) => {
+    const imagenes = product.IMAGENES || {};
+    const cropData = imagenes.imageCropData || {};
+    const mainIndex = imagenes.mainImageIndex || 0;
+    const crop = cropData[mainIndex];
+    
+    if (crop && crop.crop) {
+      // Usar el aspect ratio guardado del recorte
+      const { width, height } = crop.crop;
+      return width / height;
+    }
+    
+    // Aspect ratio por defecto (280/192 ≈ 1.46)
+    return 280 / 192;
   };
 
   // Componente de paginación
@@ -454,19 +471,41 @@ export default function Products() {
               >
                 <div className="bg-gradient-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden h-full hover:border-primary-400 hover:shadow-2xl hover:shadow-primary-500/30 transition-all duration-300 flex flex-col">
                   {/* Product Image */}
-                  <div className="relative h-36 md:h-48 shrink-0 bg-gradient-to-br from-primary-600/20 via-dark-700 to-purple-600/20 overflow-hidden">
-                    <Image
-                      src={getProductImage(product)}
-                      alt={product.NOMBRE}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                      loading="lazy"
-                    />
+                  <div className="relative h-36 md:h-48 shrink-0 overflow-hidden">
+                    {getProductImage(product) ? (
+                      <>
+                        {/* Blurred background matching the image */}
+                        <Image
+                          src={getProductImage(product)!}
+                          alt=""
+                          fill
+                          className="object-cover blur-3xl scale-110 opacity-60"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                          loading="lazy"
+                        />
+                        {/* Actual image on top */}
+                        <Image
+                          src={getProductImage(product)!}
+                          alt={product.NOMBRE}
+                          fill
+                          className="object-contain group-hover:scale-110 transition-transform duration-500 relative z-10"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                          loading="lazy"
+                        />
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-500">
+                        <svg className="w-16 h-16 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-xl mb-1">:(</span>
+                        <span className="text-xs">Sin foto disponible</span>
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-dark-900/60 to-transparent"></div>
                     
                     {/* Category Badge */}
-                    <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-gradient-to-r from-primary-500 to-blue-500 text-white text-[8px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full font-bold shadow-lg shadow-primary-500/50">
+                    <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-gradient-to-r from-primary-500 to-blue-500 text-white text-[8px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full font-bold shadow-lg shadow-primary-500/50 z-20">
                       {product.SUBCATEGORIA || product.CATEGORIA}
                     </div>
                   </div>

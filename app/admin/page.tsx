@@ -24,6 +24,7 @@ import {
 } from "react-icons/fi";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
+import ImageCropper from "@/components/ImageCropper";
 
 interface Product {
   id?: number;
@@ -35,7 +36,10 @@ interface Product {
   images?: string[];
   videos?: string[];
   mainImageIndex?: number;
-  stock?: boolean;
+  stock?: number;
+  POSICION?: number;
+  NUM_VENTAS?: number;
+  imageCropData?: { [key: number]: any };
 }
 
 const categories = [
@@ -67,6 +71,8 @@ export default function AdminPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showImageCropper, setShowImageCropper] = useState(false);
+  const [currentImageToCrop, setCurrentImageToCrop] = useState<{ url: string; index: number } | null>(null);
 
   const [productForm, setProductForm] = useState<Product>({
     NOMBRE: "",
@@ -77,7 +83,10 @@ export default function AdminPage() {
     images: [],
     videos: [],
     mainImageIndex: 0,
-    stock: true,
+    stock: 0,
+    POSICION: 0,
+    NUM_VENTAS: 0,
+    imageCropData: {},
   });
 
   useEffect(() => {
@@ -158,6 +167,7 @@ export default function AdminPage() {
 
     const url = await uploadFile(file, 'images');
     if (url) {
+      const newIndex = (productForm.images || []).length;
       setProductForm(prev => {
         const currentImages = prev.images || [];
         return {
@@ -166,6 +176,10 @@ export default function AdminPage() {
         };
       });
       showSuccess('Imagen subida exitosamente');
+      
+      // Abrir el cropper automáticamente para la nueva imagen
+      setCurrentImageToCrop({ url, index: newIndex });
+      setShowImageCropper(true);
     }
   };
 
@@ -195,12 +209,73 @@ export default function AdminPage() {
     setProductForm(prev => {
       const newImages = prev.images?.filter((_, i) => i !== index) || [];
       const newMainIndex = prev.mainImageIndex === index ? 0 : (prev.mainImageIndex! > index ? prev.mainImageIndex! - 1 : prev.mainImageIndex);
+      const newCropData = { ...(prev.imageCropData || {}) };
+      delete newCropData[index];
+      
+      // Reajustar índices en cropData
+      const adjustedCropData: { [key: number]: any } = {};
+      Object.keys(newCropData).forEach(key => {
+        const idx = parseInt(key);
+        if (idx > index) {
+          adjustedCropData[idx - 1] = newCropData[idx];
+        } else {
+          adjustedCropData[idx] = newCropData[idx];
+        }
+      });
+      
       return {
         ...prev,
         images: newImages,
-        mainImageIndex: newMainIndex
+        mainImageIndex: newMainIndex,
+        imageCropData: adjustedCropData
       };
     });
+  };
+
+  const handleCropImage = (index: number) => {
+    const imageUrl = productForm.images?.[index];
+    if (imageUrl) {
+      setCurrentImageToCrop({ url: imageUrl, index });
+      setShowImageCropper(true);
+    }
+  };
+
+  const handleSaveCrop = async (croppedImageUrl: string, cropData: any) => {
+    if (!currentImageToCrop) return;
+
+    // Convertir el blob URL a File
+    const response = await fetch(croppedImageUrl);
+    const blob = await response.blob();
+    const file = new File([blob], `cropped_${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+    // Subir la imagen recortada
+    const uploadedUrl = await uploadFile(file, 'images');
+    
+    if (uploadedUrl) {
+      setProductForm(prev => {
+        const newImages = [...(prev.images || [])];
+        newImages[currentImageToCrop.index] = uploadedUrl;
+        
+        return {
+          ...prev,
+          images: newImages,
+          imageCropData: {
+            ...(prev.imageCropData || {}),
+            [currentImageToCrop.index]: cropData
+          }
+        };
+      });
+      
+      showSuccess('Imagen ajustada exitosamente');
+    }
+
+    setShowImageCropper(false);
+    setCurrentImageToCrop(null);
+  };
+
+  const handleCancelCrop = () => {
+    setShowImageCropper(false);
+    setCurrentImageToCrop(null);
   };
 
   const removeVideo = (index: number) => {
@@ -231,7 +306,10 @@ export default function AdminPage() {
       images: [],
       videos: [],
       mainImageIndex: 0,
-      stock: true,
+      stock: 0,
+      POSICION: 0,
+      NUM_VENTAS: 0,
+      imageCropData: {},
     });
     setShowProductModal(true);
   };
@@ -239,11 +317,19 @@ export default function AdminPage() {
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
     const imagenes = (product as any).IMAGENES || {};
+    const precio = typeof product.PRECIO === 'number' 
+      ? product.PRECIO.toLocaleString('es-CL')
+      : product.PRECIO;
     setProductForm({
       ...product,
+      PRECIO: precio,
+      stock: (product as any).STOCK || 0,
+      POSICION: (product as any).POSICION || 0,
+      NUM_VENTAS: (product as any).NUM_VENTAS || 0,
       images: imagenes.images || [],
       videos: imagenes.videos || [],
-      mainImageIndex: imagenes.mainImageIndex || 0
+      mainImageIndex: imagenes.mainImageIndex || 0,
+      imageCropData: imagenes.imageCropData || {}
     });
     setShowProductModal(true);
   };
@@ -260,15 +346,20 @@ export default function AdminPage() {
       const productData = {
         NOMBRE: productForm.NOMBRE,
         DETALLE: productForm.DETALLE || null,
-        PRECIO: typeof productForm.PRECIO === 'string' ? parseFloat(productForm.PRECIO) : productForm.PRECIO,
+        PRECIO: typeof productForm.PRECIO === 'string' 
+          ? parseFloat(productForm.PRECIO.replace(/\./g, '').replace(',', '.')) 
+          : productForm.PRECIO,
         CATEGORIA: productForm.CATEGORIA,
         SUBCATEGORIA: productForm.SUBCATEGORIA || null,
+        STOCK: typeof productForm.stock === 'string' ? parseInt(productForm.stock) : (productForm.stock || 0),
+        POSICION: typeof productForm.POSICION === 'string' ? parseInt(productForm.POSICION) : (productForm.POSICION || 0),
+        NUM_VENTAS: typeof productForm.NUM_VENTAS === 'string' ? parseInt(productForm.NUM_VENTAS) : (productForm.NUM_VENTAS || 0),
         IMAGENES: {
           images: productForm.images || [],
           videos: productForm.videos || [],
-          mainImageIndex: productForm.mainImageIndex || 0
-        },
-        stock: productForm.stock
+          mainImageIndex: productForm.mainImageIndex || 0,
+          imageCropData: productForm.imageCropData || {}
+        }
       };
 
       if (editingProduct?.id) {
@@ -471,8 +562,9 @@ export default function AdminPage() {
                                   className="object-cover"
                                 />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <FiImage className="text-gray-600" />
+                                <div className="w-full h-full flex flex-col items-center justify-center bg-dark-700 text-gray-500">
+                                  <span className="text-3xl mb-1">:(</span>
+                                  <span className="text-xs">Sin foto</span>
                                 </div>
                               );
                             })()}
@@ -488,9 +580,9 @@ export default function AdminPage() {
                         <td className="px-6 py-4 text-white font-semibold">{formatPrice(product.PRECIO)}</td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            product.stock ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                            ((product as any).STOCK || 0) > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
                           }`}>
-                            {product.stock ? 'En Stock' : 'Sin Stock'}
+                            {(product as any).STOCK || 0}
                           </span>
                         </td>
                         <td className="px-6 py-4">
@@ -564,11 +656,20 @@ export default function AdminPage() {
                     <div>
                       <label className="block text-gray-300 mb-2 font-semibold">Precio *</label>
                       <input
-                        type="number"
-                        value={productForm.PRECIO}
-                        onChange={(e) => setProductForm({ ...productForm, PRECIO: e.target.value })}
+                        type="text"
+                        value={typeof productForm.PRECIO === 'number' 
+                          ? productForm.PRECIO.toLocaleString('es-CL') 
+                          : productForm.PRECIO}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\./g, '');
+                          setProductForm({ ...productForm, PRECIO: value });
+                        }}
+                        onBlur={(e) => {
+                          const numValue = parseInt(e.target.value.replace(/\./g, '')) || 0;
+                          setProductForm({ ...productForm, PRECIO: numValue.toLocaleString('es-CL') });
+                        }}
                         className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
-                        placeholder="0"
+                        placeholder="20.000.000"
                       />
                     </div>
 
@@ -609,15 +710,43 @@ export default function AdminPage() {
                     />
                   </div>
 
-                  {/* Stock */}
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={productForm.stock}
-                      onChange={(e) => setProductForm({ ...productForm, stock: e.target.checked })}
-                      className="w-5 h-5 bg-dark-700 border-dark-600 rounded focus:ring-primary-500"
-                    />
-                    <label className="text-gray-300 font-semibold">Producto en stock</label>
+                  {/* Stock, Posicion y Num Ventas */}
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-gray-300 mb-2 font-semibold">Stock</label>
+                      <input
+                        type="number"
+                        value={productForm.stock === 0 ? '' : productForm.stock || ''}
+                        onChange={(e) => setProductForm({ ...productForm, stock: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
+                        className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                        placeholder="Cantidad en stock"
+                        min="0"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-300 mb-2 font-semibold">Posición</label>
+                      <input
+                        type="number"
+                        value={productForm.POSICION === 0 ? '' : productForm.POSICION || ''}
+                        onChange={(e) => setProductForm({ ...productForm, POSICION: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
+                        className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                        placeholder="Orden de visualización"
+                        min="0"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-300 mb-2 font-semibold">Número de Ventas</label>
+                      <input
+                        type="number"
+                        value={productForm.NUM_VENTAS === 0 ? '' : productForm.NUM_VENTAS || ''}
+                        onChange={(e) => setProductForm({ ...productForm, NUM_VENTAS: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
+                        className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                        placeholder="Cantidad de ventas"
+                        min="0"
+                      />
+                    </div>
                   </div>
 
                   {/* Images */}
@@ -664,8 +793,24 @@ export default function AdminPage() {
                                   </div>
                                 )}
                               </div>
+                              <div className="absolute bottom-2 left-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCropImage(idx);
+                                  }}
+                                  className="flex-1 p-1.5 bg-blue-500 hover:bg-blue-600 rounded text-white text-xs font-semibold flex items-center justify-center gap-1"
+                                  title="Ajustar imagen"
+                                >
+                                  <FiEdit className="text-sm" />
+                                  Ajustar
+                                </button>
+                              </div>
                               <button
-                                onClick={() => removeImage(idx)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeImage(idx);
+                                }}
                                 className="absolute top-2 right-2 p-1 bg-red-500 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
                               >
                                 <FiX className="text-white" />
@@ -699,11 +844,15 @@ export default function AdminPage() {
                       {productForm.videos && productForm.videos.length > 0 && (
                         <div className="space-y-2">
                           {productForm.videos.map((video, idx) => (
-                            <div key={idx} className="flex items-center justify-between bg-dark-700 p-3 rounded-lg">
-                              <span className="text-gray-300 text-sm truncate flex-1">Video {idx + 1}</span>
+                            <div key={idx} className="relative group bg-dark-700 rounded-lg overflow-hidden">
+                              <video 
+                                src={video} 
+                                controls 
+                                className="w-full h-48 object-cover"
+                              />
                               <button
                                 onClick={() => removeVideo(idx)}
-                                className="p-1 bg-red-500 hover:bg-red-600 rounded"
+                                className="absolute top-2 right-2 p-1 bg-red-500 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                               >
                                 <FiX className="text-white" />
                               </button>
@@ -734,6 +883,18 @@ export default function AdminPage() {
                 </div>
               </motion.div>
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Image Cropper Modal */}
+        <AnimatePresence>
+          {showImageCropper && currentImageToCrop && (
+            <ImageCropper
+              imageSrc={currentImageToCrop.url}
+              onSave={handleSaveCrop}
+              onCancel={handleCancelCrop}
+              initialCrop={productForm.imageCropData?.[currentImageToCrop.index]?.crop}
+            />
           )}
         </AnimatePresence>
       </main>
