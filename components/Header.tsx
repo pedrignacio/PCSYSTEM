@@ -6,19 +6,62 @@ import { FiMenu, FiX, FiPhone, FiLogIn, FiLogOut, FiShield } from "react-icons/f
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRouter, usePathname } from "next/navigation";
 
 const navItems = [
-  { name: "Inicio", href: "/" },
-  { name: "Productos", href: "/productos" },
-  { name: "Servicios", href: "/#servicios" },
-  { name: "Nosotros", href: "/#nosotros" },
-  { name: "Ubicación", href: "/#ubicacion" },
-  { name: "Contacto", href: "/#contacto" },
+  { name: "Inicio", href: "/", scrollTo: null },
+  { name: "Productos", href: "/productos", scrollTo: null },
+  { name: "Servicios", href: "/", scrollTo: "servicios" },
+  { name: "Nosotros", href: "/", scrollTo: "nosotros" },
+  { name: "Ubicación", href: "/", scrollTo: "ubicacion" },
+  { name: "Contacto", href: "/", scrollTo: "contacto" },
 ];
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const { isAuthenticated, logout, user } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, item: typeof navItems[0]) => {
+    if (item.scrollTo) {
+      e.preventDefault();
+      
+      // Si no estamos en la página principal, navegar primero
+      if (pathname !== "/") {
+        router.push("/");
+        // Esperar a que cargue y luego hacer scroll
+        setTimeout(() => {
+          const element = document.getElementById(item.scrollTo!);
+          if (element) {
+            const headerOffset = 80;
+            const elementPosition = element.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: "smooth"
+            });
+          }
+        }, 100);
+      } else {
+        // Ya estamos en la página principal, solo hacer scroll
+        const element = document.getElementById(item.scrollTo);
+        if (element) {
+          const headerOffset = 80;
+          const elementPosition = element.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: "smooth"
+          });
+        }
+      }
+      
+      setIsOpen(false);
+    }
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-dark-800/90 backdrop-blur-md border-b border-dark-700">
@@ -41,6 +84,7 @@ export default function Header() {
             <li key={item.name}>
               <Link
                 href={item.href}
+                onClick={(e) => handleNavClick(e, item)}
                 className="text-gray-300 hover:text-primary-400 transition-colors duration-200 font-medium"
               >
                 {item.name}
@@ -86,7 +130,7 @@ export default function Header() {
                 <li key={item.name}>
                   <Link
                     href={item.href}
-                    onClick={() => setIsOpen(false)}
+                    onClick={(e) => handleNavClick(e, item)}
                     className="block text-gray-300 hover:text-primary-400 transition-colors duration-200 py-2"
                   >
                     {item.name}
