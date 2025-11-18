@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
-import { supabase } from '@/lib/supabase'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://pcsystem.cl'
@@ -44,23 +45,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
-  // Obtener productos desde Supabase
-  const { data: products, error } = await supabase
-    .from('PRODUCTOS')
-    .select('ID')
+  // Obtener productos desde el backend
+  try {
+    const response = await fetch(`${API_URL}/api/pcs?all=true`, {
+      next: { revalidate: 3600 } // Cache por 1 hora
+    })
+    
+    if (!response.ok) {
+      throw new Error('Error fetching products')
+    }
+    
+    const products = await response.json()
 
-  if (error || !products) {
+    // Páginas dinámicas de productos
+    const productPages: MetadataRoute.Sitemap = products.map((product: any) => ({
+      url: `${baseUrl}/productos/${product.id}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    }))
+
+    return [...staticPages, ...productPages]
+  } catch (error) {
     console.error('Error fetching products for sitemap:', error)
     return staticPages
   }
-
-  // Páginas dinámicas de productos
-  const productPages: MetadataRoute.Sitemap = products.map((product) => ({
-    url: `${baseUrl}/productos/${product.ID}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.8,
-  }))
-
-  return [...staticPages, ...productPages]
 }

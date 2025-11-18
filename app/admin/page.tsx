@@ -26,7 +26,7 @@ import {
   FiArrowUp,
   FiArrowDown,
 } from "react-icons/fi";
-import { supabase } from "@/lib/supabase";
+import { apiService } from "@/lib/api";
 import Image from "next/image";
 import ImageCropper from "@/components/ImageCropper";
 
@@ -141,12 +141,7 @@ export default function AdminPage() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('Productos')
-        .select('*')
-        .order('POSICION', { ascending: true });
-
-      if (error) throw error;
+      const data = await apiService.getPCs(1, 12, true); // all=true para obtener todos los productos
       setProducts(data || []);
       setFilteredProducts(data || []);
     } catch (error: any) {
@@ -159,24 +154,15 @@ export default function AdminPage() {
   const uploadFile = async (file: File, folder: 'images' | 'videos' = 'images') => {
     try {
       setUploading(true);
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
-      const filePath = `${folder}/${fileName}`;
+      
+      let result;
+      if (folder === 'images') {
+        result = await apiService.uploadImage(file);
+      } else {
+        result = await apiService.uploadVideo(file);
+      }
 
-      const { error: uploadError } = await supabase.storage
-        .from('Imagenes')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('Imagenes')
-        .getPublicUrl(filePath);
-
-      return data.publicUrl;
+      return result.url;
     } catch (error: any) {
       showError(`Error al subir archivo: ${error.message}`);
       return null;
@@ -410,6 +396,9 @@ export default function AdminPage() {
           // Get all products except the one being edited
           const otherProducts = products.filter(p => p.id !== editingProduct.id);
           
+          // Prepare position updates
+          const positionUpdates: Array<{id: number, POSICION: number}> = [];
+          
           // Update positions of affected products
           for (const product of otherProducts) {
             const currentPos = product.POSICION || 0;
@@ -423,40 +412,33 @@ export default function AdminPage() {
             }
             
             if (newPos !== currentPos) {
-              await supabase
-                .from('Productos')
-                .update({ POSICION: newPos })
-                .eq('id', product.id);
+              positionUpdates.push({ id: product.id!, POSICION: newPos });
             }
+          }
+          
+          // Update positions in batch
+          if (positionUpdates.length > 0) {
+            await apiService.updatePositions(positionUpdates);
           }
         }
 
-        const { error } = await supabase
-          .from('Productos')
-          .update(productData)
-          .eq('id', editingProduct.id);
-
-        if (error) throw error;
+        await apiService.updatePC(editingProduct.id, productData);
         showSuccess("Producto actualizado exitosamente");
       } else {
-        // Creating new product - first insert, then adjust positions
-        const { data: newProduct, error: insertError } = await supabase
-          .from('Productos')
-          .insert([productData])
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
+        // Creating new product
+        const result = await apiService.createPC(productData);
         
-        // Now shift positions of existing products at or after new position
+        // Shift positions of existing products at or after new position
+        const positionUpdates: Array<{id: number, POSICION: number}> = [];
         for (const product of products) {
           const currentPos = product.POSICION || 0;
-          if (currentPos >= newPosition && product.id !== newProduct.id) {
-            await supabase
-              .from('Productos')
-              .update({ POSICION: currentPos + 1 })
-              .eq('id', product.id);
+          if (currentPos >= newPosition && product.id !== result.data?.id) {
+            positionUpdates.push({ id: product.id!, POSICION: currentPos + 1 });
           }
+        }
+        
+        if (positionUpdates.length > 0) {
+          await apiService.updatePositions(positionUpdates);
         }
         
         showSuccess("Producto creado exitosamente");
@@ -482,23 +464,20 @@ export default function AdminPage() {
       const deletedPosition = productToDelete?.POSICION || 0;
       
       // Delete the product
-      const { error } = await supabase
-        .from('Productos')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+      await apiService.deletePC(id);
       
       // Update positions of products that were after the deleted one
+      const positionUpdates: Array<{id: number, POSICION: number}> = [];
       const productsToUpdate = products.filter(p => 
         p.id !== id && (p.POSICION || 0) > deletedPosition
       );
       
       for (const product of productsToUpdate) {
-        await supabase
-          .from('Productos')
-          .update({ POSICION: (product.POSICION || 0) - 1 })
-          .eq('id', product.id);
+        positionUpdates.push({ id: product.id!, POSICION: (product.POSICION || 0) - 1 });
+      }
+      
+      if (positionUpdates.length > 0) {
+        await apiService.updatePositions(positionUpdates);
       }
       
       showSuccess("Producto eliminado exitosamente");
@@ -1269,14 +1248,7 @@ export default function AdminPage() {
                           POSICION: index + 1
                         }));
 
-                        for (const update of updates) {
-                          const { error } = await supabase
-                            .from('Productos')
-                            .update({ POSICION: update.POSICION })
-                            .eq('id', update.id);
-
-                          if (error) throw error;
-                        }
+                        await apiService.updatePositions(updates);
 
                         setSuccessMessage('Posiciones actualizadas correctamente');
                         setTimeout(() => setSuccessMessage(''), 3000);

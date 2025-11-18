@@ -74,6 +74,16 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+
+  // Rewrites para manejar URLs con slugs
+  async rewrites() {
+    return [
+      {
+        source: '/productos/:id/:slug*',
+        destination: '/productos/:id',
+      },
+    ]
+  },
   
   // Solo usar basePath para GitHub Pages
   ...(isGitHubPages && {

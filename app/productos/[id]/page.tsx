@@ -25,7 +25,7 @@ import {
   FiLoader,
   FiVideo,
 } from "react-icons/fi";
-import { supabase } from "@/lib/supabase";
+import { apiService } from "@/lib/api";
 import Script from "next/script";
 
 interface Product {
@@ -55,39 +55,49 @@ export default function ProductDetailPage() {
   const [imageLoading, setImageLoading] = useState(true);
   const [thumbnailsLoading, setThumbnailsLoading] = useState<{[key: number]: boolean}>({});
 
+  // Función para generar slug a partir del nombre del producto
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
+      .replace(/[^a-z0-9\s-]/g, '') // Eliminar caracteres especiales
+      .trim()
+      .replace(/\s+/g, '-') // Reemplazar espacios con guiones
+      .replace(/-+/g, '-'); // Eliminar guiones múltiples
+  };
+
   useEffect(() => {
     if (productId) {
       fetchProduct();
     }
   }, [productId]);
 
+  // Actualizar URL con el slug cuando se cargue el producto
+  useEffect(() => {
+    if (product && product.NOMBRE) {
+      const slug = generateSlug(product.NOMBRE);
+      const newUrl = `/productos/${productId}/${slug}`;
+      
+      // Solo actualizar si la URL actual no tiene el slug
+      if (!window.location.pathname.includes(slug)) {
+        window.history.replaceState(null, '', newUrl);
+      }
+    }
+  }, [product, productId]);
+
   const fetchProduct = async () => {
     try {
       setLoading(true);
       
       // Obtener producto principal
-      const { data: productData, error: productError } = await supabase
-        .from('Productos')
-        .select('*')
-        .eq('id', productId)
-        .single();
-
-      if (productError) throw productError;
-      
+      const productData = await apiService.getPCById(productId);
       setProduct(productData);
 
-      // Obtener productos relacionados de la misma categoría
+      // Obtener productos relacionados
       if (productData) {
-        const { data: relatedData, error: relatedError } = await supabase
-          .from('Productos')
-          .select('*')
-          .eq('CATEGORIA', productData.CATEGORIA)
-          .neq('id', productId)
-          .limit(4);
-
-        if (!relatedError && relatedData) {
-          setRelatedProducts(relatedData);
-        }
+        const relatedData = await apiService.getRelatedProducts(productId, 4);
+        setRelatedProducts(relatedData);
       }
     } catch (error) {
       console.error('Error fetching product:', error);
@@ -760,13 +770,15 @@ export default function ProductDetailPage() {
                 </Link>
               </div>
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {relatedProducts.map((relatedProduct, idx) => (
-                  <Link
-                    key={relatedProduct.id}
-                    href={`/productos/${relatedProduct.id}`}
-                    className="group"
-                  >
-                    <motion.div
+                {relatedProducts.map((relatedProduct, idx) => {
+                  const slug = generateSlug(relatedProduct.NOMBRE);
+                  return (
+                    <Link
+                      key={relatedProduct.id}
+                      href={`/productos/${relatedProduct.id}/${slug}`}
+                      className="group"
+                    >
+                      <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: idx * 0.1 }}
@@ -810,7 +822,8 @@ export default function ProductDetailPage() {
                       </div>
                     </motion.div>
                   </Link>
-                ))}
+                );
+                })}
               </div>
             </motion.div>
           )}

@@ -1,26 +1,28 @@
 import { Metadata } from 'next'
-import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 
 type Props = {
   params: Promise<{ id: string }>
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
   
-  // Obtener producto de Supabase
-  const { data: product, error } = await supabase
-    .from('Productos')
-    .select('*')
-    .eq('id', parseInt(id))
-    .single()
-  
-  if (error || !product) {
-    return {
-      title: 'Producto no encontrado',
+  // Obtener producto del backend
+  try {
+    const response = await fetch(`${API_URL}/api/pcs/${id}`, {
+      next: { revalidate: 60 } // Cache por 60 segundos
+    });
+    
+    if (!response.ok) {
+      return {
+        title: 'Producto no encontrado',
+      }
     }
-  }
+    
+    const product = await response.json();
 
   const formatPrice = (price: number | string) => {
     let numPrice = 0;
@@ -76,6 +78,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: `https://pcsystem.cl/productos/${id}`,
     },
+  }
+  } catch (error) {
+    console.error('Error fetching product metadata:', error);
+    return {
+      title: 'Producto no encontrado',
+    }
   }
 }
 
