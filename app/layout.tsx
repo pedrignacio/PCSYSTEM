@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Analytics } from "@vercel/analytics/react";
+// import { Analytics } from "@vercel/analytics/react"; // Comentado - no estamos en Vercel
 import { AuthProvider } from "@/contexts/AuthContext";
 
 const inter = Inter({ 
@@ -97,7 +97,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
         </AuthProvider>
-        <Analytics />
+        {/* <Analytics /> */}
       </body>
     </html>
   );
