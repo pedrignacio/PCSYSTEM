@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
   FiPackage,
@@ -21,9 +20,15 @@ import {
   FiCheck,
   FiSearch,
   FiLogOut,
+  FiList,
+  FiTrendingDown,
+  FiAlertTriangle,
+  FiArrowUp,
+  FiArrowDown,
 } from "react-icons/fi";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
+import ImageCropper from "@/components/ImageCropper";
 
 interface Product {
   id?: number;
@@ -32,10 +37,13 @@ interface Product {
   PRECIO: number | string;
   CATEGORIA: string;
   SUBCATEGORIA?: string;
-  image?: string;
   images?: string[];
   videos?: string[];
-  stock?: boolean;
+  mainImageIndex?: number;
+  stock?: number;
+  POSICION?: number;
+  NUM_VENTAS?: number;
+  imageCropData?: { [key: number]: any };
 }
 
 const categories = [
@@ -63,10 +71,19 @@ export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showImageCropper, setShowImageCropper] = useState(false);
+  const [currentImageToCrop, setCurrentImageToCrop] = useState<{ url: string; index: number } | null>(null);
+  const [showPositionModal, setShowPositionModal] = useState(false);
+  const [orderedProducts, setOrderedProducts] = useState<Product[]>([]);
+  const [positionSearchTerm, setPositionSearchTerm] = useState("");
+  const [draggedItem, setDraggedItem] = useState<number | null>(null);
+  const [sortBy, setSortBy] = useState<'position' | 'stock'>('position');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const [productForm, setProductForm] = useState<Product>({
     NOMBRE: "",
@@ -74,10 +91,13 @@ export default function AdminPage() {
     PRECIO: "",
     DETALLE: "",
     SUBCATEGORIA: "",
-    image: "",
     images: [],
     videos: [],
-    stock: true,
+    mainImageIndex: 0,
+    stock: 0,
+    POSICION: 0,
+    NUM_VENTAS: 0,
+    imageCropData: {},
   });
 
   useEffect(() => {
@@ -93,12 +113,30 @@ export default function AdminPage() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    const filtered = products.filter(p =>
-      p.NOMBRE.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.CATEGORIA.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    let filtered = products.filter(p => {
+      const matchesCategory = selectedCategory === "all" || p.CATEGORIA === selectedCategory;
+      const matchesSearch = p.NOMBRE.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           p.CATEGORIA.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+
+    // Aplicar ordenamiento
+    if (sortBy === 'stock') {
+      filtered = filtered.sort((a, b) => {
+        const stockA = (a as any).STOCK || 0;
+        const stockB = (b as any).STOCK || 0;
+        return sortOrder === 'asc' ? stockA - stockB : stockB - stockA;
+      });
+    } else {
+      filtered = filtered.sort((a, b) => {
+        const posA = a.POSICION || 0;
+        const posB = b.POSICION || 0;
+        return sortOrder === 'asc' ? posA - posB : posB - posA;
+      });
+    }
+
     setFilteredProducts(filtered);
-  }, [searchTerm, products]);
+  }, [searchTerm, selectedCategory, products, sortBy, sortOrder]);
 
   const fetchProducts = async () => {
     try {
@@ -106,7 +144,7 @@ export default function AdminPage() {
       const { data, error } = await supabase
         .from('Productos')
         .select('*')
-        .order('id', { ascending: false });
+        .order('POSICION', { ascending: true });
 
       if (error) throw error;
       setProducts(data || []);
@@ -127,7 +165,10 @@ export default function AdminPage() {
 
       const { error: uploadError } = await supabase.storage
         .from('Imagenes')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) throw uploadError;
 
@@ -155,12 +196,19 @@ export default function AdminPage() {
 
     const url = await uploadFile(file, 'images');
     if (url) {
-      setProductForm(prev => ({
-        ...prev,
-        image: prev.image || url,
-        images: [...(prev.images || []), url]
-      }));
+      const newIndex = (productForm.images || []).length;
+      setProductForm(prev => {
+        const currentImages = prev.images || [];
+        return {
+          ...prev,
+          images: [...currentImages, url]
+        };
+      });
       showSuccess('Imagen subida exitosamente');
+      
+      // Abrir el cropper automáticamente para la nueva imagen
+      setCurrentImageToCrop({ url, index: newIndex });
+      setShowImageCropper(true);
     }
   };
 
@@ -175,10 +223,13 @@ export default function AdminPage() {
 
     const url = await uploadFile(file, 'videos');
     if (url) {
-      setProductForm(prev => ({
-        ...prev,
-        videos: [...(prev.videos || []), url]
-      }));
+      setProductForm(prev => {
+        const currentVideos = prev.videos || [];
+        return {
+          ...prev,
+          videos: [...currentVideos, url]
+        };
+      });
       showSuccess('Video subido exitosamente');
     }
   };
@@ -186,12 +237,74 @@ export default function AdminPage() {
   const removeImage = (index: number) => {
     setProductForm(prev => {
       const newImages = prev.images?.filter((_, i) => i !== index) || [];
+      const newMainIndex = prev.mainImageIndex === index ? 0 : (prev.mainImageIndex! > index ? prev.mainImageIndex! - 1 : prev.mainImageIndex);
+      const newCropData = { ...(prev.imageCropData || {}) };
+      delete newCropData[index];
+      
+      // Reajustar índices en cropData
+      const adjustedCropData: { [key: number]: any } = {};
+      Object.keys(newCropData).forEach(key => {
+        const idx = parseInt(key);
+        if (idx > index) {
+          adjustedCropData[idx - 1] = newCropData[idx];
+        } else {
+          adjustedCropData[idx] = newCropData[idx];
+        }
+      });
+      
       return {
         ...prev,
         images: newImages,
-        image: newImages[0] || ""
+        mainImageIndex: newMainIndex,
+        imageCropData: adjustedCropData
       };
     });
+  };
+
+  const handleCropImage = (index: number) => {
+    const imageUrl = productForm.images?.[index];
+    if (imageUrl) {
+      setCurrentImageToCrop({ url: imageUrl, index });
+      setShowImageCropper(true);
+    }
+  };
+
+  const handleSaveCrop = async (croppedImageUrl: string, cropData: any) => {
+    if (!currentImageToCrop) return;
+
+    // Convertir el blob URL a File
+    const response = await fetch(croppedImageUrl);
+    const blob = await response.blob();
+    const file = new File([blob], `cropped_${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+    // Subir la imagen recortada
+    const uploadedUrl = await uploadFile(file, 'images');
+    
+    if (uploadedUrl) {
+      setProductForm(prev => {
+        const newImages = [...(prev.images || [])];
+        newImages[currentImageToCrop.index] = uploadedUrl;
+        
+        return {
+          ...prev,
+          images: newImages,
+          imageCropData: {
+            ...(prev.imageCropData || {}),
+            [currentImageToCrop.index]: cropData
+          }
+        };
+      });
+      
+      showSuccess('Imagen ajustada exitosamente');
+    }
+
+    setShowImageCropper(false);
+    setCurrentImageToCrop(null);
+  };
+
+  const handleCancelCrop = () => {
+    setShowImageCropper(false);
+    setCurrentImageToCrop(null);
   };
 
   const removeVideo = (index: number) => {
@@ -213,26 +326,45 @@ export default function AdminPage() {
 
   const handleOpenAddProduct = () => {
     setEditingProduct(null);
+    
+    // Calculate next position (max position + 1)
+    const maxPosition = products.length > 0 
+      ? Math.max(...products.map(p => p.POSICION || 0)) 
+      : -1;
+    
     setProductForm({
       NOMBRE: "",
       CATEGORIA: categories[0],
       PRECIO: "",
       DETALLE: "",
       SUBCATEGORIA: "",
-      image: "",
       images: [],
       videos: [],
-      stock: true,
+      mainImageIndex: 0,
+      stock: 0,
+      POSICION: maxPosition + 1,
+      NUM_VENTAS: 0,
+      imageCropData: {},
     });
     setShowProductModal(true);
   };
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
+    const imagenes = (product as any).IMAGENES || {};
+    const precio = typeof product.PRECIO === 'number' 
+      ? product.PRECIO.toLocaleString('es-CL')
+      : product.PRECIO;
     setProductForm({
       ...product,
-      images: product.images || [],
-      videos: product.videos || []
+      PRECIO: precio,
+      stock: (product as any).STOCK || 0,
+      POSICION: (product as any).POSICION || 0,
+      NUM_VENTAS: (product as any).NUM_VENTAS || 0,
+      images: imagenes.images || [],
+      videos: imagenes.videos || [],
+      mainImageIndex: imagenes.mainImageIndex || 0,
+      imageCropData: imagenes.imageCropData || {}
     });
     setShowProductModal(true);
   };
@@ -246,17 +378,59 @@ export default function AdminPage() {
 
       setLoading(true);
 
+      const newPosition = typeof productForm.POSICION === 'string' 
+        ? parseInt(productForm.POSICION) 
+        : (productForm.POSICION || 0);
+
       const productData = {
         NOMBRE: productForm.NOMBRE,
         DETALLE: productForm.DETALLE || null,
-        PRECIO: typeof productForm.PRECIO === 'string' ? parseFloat(productForm.PRECIO) : productForm.PRECIO,
+        PRECIO: typeof productForm.PRECIO === 'string' 
+          ? parseFloat(productForm.PRECIO.replace(/\./g, '').replace(',', '.')) 
+          : productForm.PRECIO,
         CATEGORIA: productForm.CATEGORIA,
         SUBCATEGORIA: productForm.SUBCATEGORIA || null,
-        image: productForm.image || null,
-        stock: productForm.stock
+        STOCK: typeof productForm.stock === 'string' ? parseInt(productForm.stock) : (productForm.stock || 0),
+        POSICION: newPosition,
+        NUM_VENTAS: typeof productForm.NUM_VENTAS === 'string' ? parseInt(productForm.NUM_VENTAS) : (productForm.NUM_VENTAS || 0),
+        IMAGENES: {
+          images: productForm.images || [],
+          videos: productForm.videos || [],
+          mainImageIndex: productForm.mainImageIndex || 0,
+          imageCropData: productForm.imageCropData || {}
+        }
       };
 
       if (editingProduct?.id) {
+        // Editing existing product
+        const oldPosition = editingProduct.POSICION || 0;
+        
+        // If position changed, update other products
+        if (oldPosition !== newPosition) {
+          // Get all products except the one being edited
+          const otherProducts = products.filter(p => p.id !== editingProduct.id);
+          
+          // Update positions of affected products
+          for (const product of otherProducts) {
+            const currentPos = product.POSICION || 0;
+            let newPos = currentPos;
+            
+            // If inserting into a position
+            if (newPosition <= currentPos && currentPos < oldPosition) {
+              newPos = currentPos + 1;
+            } else if (oldPosition < currentPos && currentPos <= newPosition) {
+              newPos = currentPos - 1;
+            }
+            
+            if (newPos !== currentPos) {
+              await supabase
+                .from('Productos')
+                .update({ POSICION: newPos })
+                .eq('id', product.id);
+            }
+          }
+        }
+
         const { error } = await supabase
           .from('Productos')
           .update(productData)
@@ -265,11 +439,26 @@ export default function AdminPage() {
         if (error) throw error;
         showSuccess("Producto actualizado exitosamente");
       } else {
-        const { error } = await supabase
+        // Creating new product - first insert, then adjust positions
+        const { data: newProduct, error: insertError } = await supabase
           .from('Productos')
-          .insert([productData]);
+          .insert([productData])
+          .select()
+          .single();
 
-        if (error) throw error;
+        if (insertError) throw insertError;
+        
+        // Now shift positions of existing products at or after new position
+        for (const product of products) {
+          const currentPos = product.POSICION || 0;
+          if (currentPos >= newPosition && product.id !== newProduct.id) {
+            await supabase
+              .from('Productos')
+              .update({ POSICION: currentPos + 1 })
+              .eq('id', product.id);
+          }
+        }
+        
         showSuccess("Producto creado exitosamente");
       }
 
@@ -287,12 +476,31 @@ export default function AdminPage() {
 
     try {
       setLoading(true);
+      
+      // Get the position of the product being deleted
+      const productToDelete = products.find(p => p.id === id);
+      const deletedPosition = productToDelete?.POSICION || 0;
+      
+      // Delete the product
       const { error } = await supabase
         .from('Productos')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
+      
+      // Update positions of products that were after the deleted one
+      const productsToUpdate = products.filter(p => 
+        p.id !== id && (p.POSICION || 0) > deletedPosition
+      );
+      
+      for (const product of productsToUpdate) {
+        await supabase
+          .from('Productos')
+          .update({ POSICION: (product.POSICION || 0) - 1 })
+          .eq('id', product.id);
+      }
+      
       showSuccess("Producto eliminado exitosamente");
       fetchProducts();
     } catch (error: any) {
@@ -333,8 +541,7 @@ export default function AdminPage() {
 
   return (
     <>
-      <Header />
-      <main className="min-h-screen pt-24 pb-20 px-4 bg-dark-900">
+      <main className="min-h-screen pt-8 pb-20 px-4 bg-dark-900">
         <div className="container mx-auto max-w-7xl">
           {/* Success/Error Messages */}
           <AnimatePresence>
@@ -390,11 +597,83 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+            
+            <div className="bg-dark-800 border border-red-500/30 rounded-xl p-6 cursor-pointer hover:border-red-500/50 transition-colors"
+                 onClick={() => {
+                   setSelectedCategory("all");
+                   setSortBy("stock");
+                   setSortOrder("asc");
+                   setSearchTerm("");
+                 }}>
+              <div className="flex items-center gap-4">
+                <div className="bg-red-500/20 p-3 rounded-lg">
+                  <FiAlertTriangle className="text-2xl text-red-400" />
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Sin Stock</p>
+                  <p className="text-3xl font-bold text-white">
+                    {products.filter(p => ((p as any).STOCK || 0) === 0).length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-dark-800 border border-yellow-500/30 rounded-xl p-6 cursor-pointer hover:border-yellow-500/50 transition-colors"
+                 onClick={() => {
+                   setSelectedCategory("all");
+                   setSortBy("stock");
+                   setSortOrder("asc");
+                   setSearchTerm("");
+                 }}>
+              <div className="flex items-center gap-4">
+                <div className="bg-yellow-500/20 p-3 rounded-lg">
+                  <FiTrendingDown className="text-2xl text-yellow-400" />
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Stock Bajo (&lt;5)</p>
+                  <p className="text-3xl font-bold text-white">
+                    {products.filter(p => {
+                      const stock = (p as any).STOCK || 0;
+                      return stock > 0 && stock < 5;
+                    }).length}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Search and Add Button */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1 relative">
+          <div className="flex flex-col gap-4 mb-6">
+            {/* Category Filter */}
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedCategory("all")}
+                className={`px-4 py-2 rounded-lg transition-all duration-300 text-sm font-medium ${
+                  selectedCategory === "all"
+                    ? "bg-primary-500 text-white shadow-lg shadow-primary-500/50"
+                    : "bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700"
+                }`}
+              >
+                Todos
+              </button>
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-4 py-2 rounded-lg transition-all duration-300 text-sm font-medium ${
+                    selectedCategory === category
+                      ? "bg-primary-500 text-white shadow-lg shadow-primary-500/50"
+                      : "bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700"
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+
+            {/* Search and Buttons */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative">
               <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
@@ -404,6 +683,61 @@ export default function AdminPage() {
                 className="w-full pl-12 pr-4 py-3 bg-dark-800 border border-dark-700 rounded-lg focus:outline-none focus:border-primary-500 text-white"
               />
             </div>
+            
+            {/* Sort Buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  if (sortBy === 'position') {
+                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                  } else {
+                    setSortBy('position');
+                    setSortOrder('asc');
+                  }
+                }}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 font-semibold ${
+                  sortBy === 'position'
+                    ? 'bg-primary-500 text-white shadow-lg'
+                    : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
+                }`}
+              >
+                Posición
+                {sortBy === 'position' && (
+                  sortOrder === 'asc' ? <FiArrowUp /> : <FiArrowDown />
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  if (sortBy === 'stock') {
+                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                  } else {
+                    setSortBy('stock');
+                    setSortOrder('asc');
+                  }
+                }}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 font-semibold ${
+                  sortBy === 'stock'
+                    ? 'bg-primary-500 text-white shadow-lg'
+                    : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
+                }`}
+              >
+                Stock
+                {sortBy === 'stock' && (
+                  sortOrder === 'asc' ? <FiArrowUp /> : <FiArrowDown />
+                )}
+              </button>
+            </div>
+            
+            <button
+              onClick={() => {
+                setOrderedProducts([...products]);
+                setShowPositionModal(true);
+              }}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg"
+            >
+              <FiList />
+              Ver Posiciones
+            </button>
             <button
               onClick={handleOpenAddProduct}
               className="flex items-center gap-2 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg"
@@ -411,6 +745,7 @@ export default function AdminPage() {
               <FiPlus />
               Agregar Producto
             </button>
+            </div>
           </div>
 
           {/* Products Table */}
@@ -443,18 +778,25 @@ export default function AdminPage() {
                       <tr key={product.id} className="hover:bg-dark-700/50 transition-colors">
                         <td className="px-6 py-4">
                           <div className="w-16 h-16 relative bg-dark-700 rounded-lg overflow-hidden">
-                            {product.image ? (
-                              <Image
-                                src={product.image}
-                                alt={product.NOMBRE}
-                                fill
-                                className="object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <FiImage className="text-gray-600" />
-                              </div>
-                            )}
+                            {(() => {
+                              const imagenes = (product as any).IMAGENES || {};
+                              const images = imagenes.images || [];
+                              const mainIndex = imagenes.mainImageIndex || 0;
+                              const mainImage = images[mainIndex];
+                              return mainImage ? (
+                                <Image
+                                  src={mainImage}
+                                  alt={product.NOMBRE}
+                                  fill
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center bg-dark-700 text-gray-500">
+                                  <span className="text-3xl mb-1">:(</span>
+                                  <span className="text-xs">Sin foto</span>
+                                </div>
+                              );
+                            })()}
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -467,9 +809,9 @@ export default function AdminPage() {
                         <td className="px-6 py-4 text-white font-semibold">{formatPrice(product.PRECIO)}</td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            product.stock ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                            ((product as any).STOCK || 0) > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
                           }`}>
-                            {product.stock ? 'En Stock' : 'Sin Stock'}
+                            {(product as any).STOCK || 0}
                           </span>
                         </td>
                         <td className="px-6 py-4">
@@ -504,7 +846,7 @@ export default function AdminPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+              className="fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center z-50 p-4"
               onClick={() => setShowProductModal(false)}
             >
               <motion.div
@@ -512,7 +854,7 @@ export default function AdminPage() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-dark-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-dark-700"
+                className="bg-dark-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border-2 border-dark-700 shadow-2xl"
               >
                 <div className="sticky top-0 bg-dark-800 border-b border-dark-700 p-6 flex items-center justify-between z-10">
                   <h2 className="text-2xl font-bold text-white">
@@ -543,11 +885,20 @@ export default function AdminPage() {
                     <div>
                       <label className="block text-gray-300 mb-2 font-semibold">Precio *</label>
                       <input
-                        type="number"
-                        value={productForm.PRECIO}
-                        onChange={(e) => setProductForm({ ...productForm, PRECIO: e.target.value })}
+                        type="text"
+                        value={typeof productForm.PRECIO === 'number' 
+                          ? productForm.PRECIO.toLocaleString('es-CL') 
+                          : productForm.PRECIO}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\./g, '');
+                          setProductForm({ ...productForm, PRECIO: value });
+                        }}
+                        onBlur={(e) => {
+                          const numValue = parseInt(e.target.value.replace(/\./g, '')) || 0;
+                          setProductForm({ ...productForm, PRECIO: numValue.toLocaleString('es-CL') });
+                        }}
                         className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
-                        placeholder="0"
+                        placeholder="20.000.000"
                       />
                     </div>
 
@@ -588,15 +939,43 @@ export default function AdminPage() {
                     />
                   </div>
 
-                  {/* Stock */}
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={productForm.stock}
-                      onChange={(e) => setProductForm({ ...productForm, stock: e.target.checked })}
-                      className="w-5 h-5 bg-dark-700 border-dark-600 rounded focus:ring-primary-500"
-                    />
-                    <label className="text-gray-300 font-semibold">Producto en stock</label>
+                  {/* Stock, Posicion y Num Ventas */}
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-gray-300 mb-2 font-semibold">Stock</label>
+                      <input
+                        type="number"
+                        value={productForm.stock === 0 ? '' : productForm.stock || ''}
+                        onChange={(e) => setProductForm({ ...productForm, stock: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
+                        className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                        placeholder="Cantidad en stock"
+                        min="0"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-300 mb-2 font-semibold">Posición</label>
+                      <input
+                        type="number"
+                        value={productForm.POSICION === 0 ? '' : productForm.POSICION || ''}
+                        onChange={(e) => setProductForm({ ...productForm, POSICION: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
+                        className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                        placeholder="Orden de visualización"
+                        min="0"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-300 mb-2 font-semibold">Número de Ventas</label>
+                      <input
+                        type="number"
+                        value={productForm.NUM_VENTAS === 0 ? '' : productForm.NUM_VENTAS || ''}
+                        onChange={(e) => setProductForm({ ...productForm, NUM_VENTAS: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 })}
+                        className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                        placeholder="Cantidad de ventas"
+                        min="0"
+                      />
+                    </div>
                   </div>
 
                   {/* Images */}
@@ -622,16 +1001,46 @@ export default function AdminPage() {
                         <div className="grid grid-cols-4 gap-4">
                           {productForm.images.map((img, idx) => (
                             <div key={idx} className="relative group">
-                              <Image
-                                src={img}
-                                alt={`Imagen ${idx + 1}`}
-                                width={200}
-                                height={200}
-                                className="w-full h-32 object-cover rounded-lg"
-                              />
+                              <div 
+                                className={`relative cursor-pointer border-4 rounded-lg overflow-hidden ${
+                                  productForm.mainImageIndex === idx 
+                                    ? 'border-primary-500 shadow-lg shadow-primary-500/50' 
+                                    : 'border-transparent hover:border-primary-500/50'
+                                }`}
+                                onClick={() => setProductForm({ ...productForm, mainImageIndex: idx })}
+                              >
+                                <Image
+                                  src={img}
+                                  alt={`Imagen ${idx + 1}`}
+                                  width={200}
+                                  height={200}
+                                  className="w-full h-32 object-cover"
+                                />
+                                {productForm.mainImageIndex === idx && (
+                                  <div className="absolute top-2 left-2 bg-primary-500 text-white text-xs px-2 py-1 rounded-full font-bold">
+                                    Principal
+                                  </div>
+                                )}
+                              </div>
+                              <div className="absolute bottom-2 left-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCropImage(idx);
+                                  }}
+                                  className="flex-1 p-1.5 bg-blue-500 hover:bg-blue-600 rounded text-white text-xs font-semibold flex items-center justify-center gap-1"
+                                  title="Ajustar imagen"
+                                >
+                                  <FiEdit className="text-sm" />
+                                  Ajustar
+                                </button>
+                              </div>
                               <button
-                                onClick={() => removeImage(idx)}
-                                className="absolute top-2 right-2 p-1 bg-red-500 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeImage(idx);
+                                }}
+                                className="absolute top-2 right-2 p-1 bg-red-500 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
                               >
                                 <FiX className="text-white" />
                               </button>
@@ -664,11 +1073,15 @@ export default function AdminPage() {
                       {productForm.videos && productForm.videos.length > 0 && (
                         <div className="space-y-2">
                           {productForm.videos.map((video, idx) => (
-                            <div key={idx} className="flex items-center justify-between bg-dark-700 p-3 rounded-lg">
-                              <span className="text-gray-300 text-sm truncate flex-1">Video {idx + 1}</span>
+                            <div key={idx} className="relative group bg-dark-700 rounded-lg overflow-hidden">
+                              <video 
+                                src={video} 
+                                controls 
+                                className="w-full h-48 object-cover"
+                              />
                               <button
                                 onClick={() => removeVideo(idx)}
-                                className="p-1 bg-red-500 hover:bg-red-600 rounded"
+                                className="absolute top-2 right-2 p-1 bg-red-500 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                               >
                                 <FiX className="text-white" />
                               </button>
@@ -695,6 +1108,192 @@ export default function AdminPage() {
                   >
                     {loading ? <FiLoader className="animate-spin" /> : <FiSave />}
                     {editingProduct ? 'Actualizar' : 'Crear'} Producto
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Image Cropper Modal */}
+        <AnimatePresence>
+          {showImageCropper && currentImageToCrop && (
+            <ImageCropper
+              imageSrc={currentImageToCrop.url}
+              onSave={handleSaveCrop}
+              onCancel={handleCancelCrop}
+              initialCrop={productForm.imageCropData?.[currentImageToCrop.index]?.crop}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Position Management Modal */}
+        <AnimatePresence>
+          {showPositionModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+              onClick={() => setShowPositionModal(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-dark-800 rounded-2xl w-full max-w-7xl max-h-[90vh] border border-dark-700 flex flex-col"
+              >
+                {/* Header */}
+                <div className="bg-dark-800 border-b border-dark-700 p-6 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-1">Gestionar Posiciones</h2>
+                    <p className="text-gray-400 text-sm">Arrastra los productos para reordenarlos</p>
+                  </div>
+                  <button
+                    onClick={() => setShowPositionModal(false)}
+                    className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
+                  >
+                    <FiX className="text-2xl text-gray-400" />
+                  </button>
+                </div>
+
+                {/* Search */}
+                <div className="p-6 border-b border-dark-700">
+                  <div className="relative">
+                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Filtrar productos..."
+                      value={positionSearchTerm}
+                      onChange={(e) => setPositionSearchTerm(e.target.value)}
+                      className="w-full pl-12 pr-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Products List */}
+                <div className="flex-1 overflow-y-auto p-6">
+                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+                    {orderedProducts
+                      .filter((p) =>
+                        p.NOMBRE?.toLowerCase().includes(positionSearchTerm.toLowerCase()) ||
+                        p.CATEGORIA?.toLowerCase().includes(positionSearchTerm.toLowerCase())
+                      )
+                      .map((product, index) => {
+                        const actualIndex = orderedProducts.indexOf(product);
+                        const imagenes = (product as any).IMAGENES || {};
+                        const images = imagenes.images || [];
+                        const mainIndex = imagenes.mainImageIndex || 0;
+                        const mainImage = images[mainIndex] || images[0] || null;
+
+                        return (
+                          <div
+                            key={product.id}
+                            draggable
+                            onDragStart={() => setDraggedItem(actualIndex)}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (draggedItem !== null && draggedItem !== actualIndex) {
+                                const newOrder = [...orderedProducts];
+                                const [removed] = newOrder.splice(draggedItem, 1);
+                                newOrder.splice(actualIndex, 0, removed);
+                                setOrderedProducts(newOrder);
+                              }
+                              setDraggedItem(null);
+                            }}
+                            className={`flex flex-col gap-2 p-2 bg-dark-700 rounded-lg border-2 transition-all cursor-move hover:border-primary-500/50 hover:scale-105 ${
+                              draggedItem === actualIndex
+                                ? 'border-primary-500 opacity-50 scale-95'
+                                : 'border-dark-600'
+                            }`}
+                          >
+                            {/* Position Badge */}
+                            <div className="flex items-center justify-center w-6 h-6 bg-gradient-to-br from-primary-500 to-purple-600 rounded text-white font-bold text-xs shadow-lg shadow-primary-500/50">
+                              {actualIndex + 1}
+                            </div>
+                            
+                            {/* Product Image */}
+                            <div className="relative w-full aspect-square bg-dark-600 rounded overflow-hidden">
+                              {mainImage ? (
+                                <Image
+                                  src={mainImage}
+                                  alt={product.NOMBRE}
+                                  fill
+                                  className="object-cover"
+                                  sizes="150px"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-500">
+                                  <FiImage className="text-xl" />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Product Info */}
+                            <div className="flex-1">
+                              <h3 className="text-white font-semibold text-xs mb-0.5 line-clamp-2 leading-tight" title={product.NOMBRE}>
+                                {product.NOMBRE}
+                              </h3>
+                              <p className="text-primary-400 font-bold text-xs">
+                                {typeof product.PRECIO === 'number'
+                                  ? `$${(product.PRECIO / 1000).toFixed(0)}k`
+                                  : product.PRECIO}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="bg-dark-800 border-t border-dark-700 p-6 flex justify-end gap-4">
+                  <button
+                    onClick={() => setShowPositionModal(false)}
+                    className="px-6 py-3 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        setLoading(true);
+                        
+                        // Update positions for all products (starting from 1)
+                        const updates = orderedProducts.map((product, index) => ({
+                          id: product.id,
+                          POSICION: index + 1
+                        }));
+
+                        for (const update of updates) {
+                          const { error } = await supabase
+                            .from('Productos')
+                            .update({ POSICION: update.POSICION })
+                            .eq('id', update.id);
+
+                          if (error) throw error;
+                        }
+
+                        setSuccessMessage('Posiciones actualizadas correctamente');
+                        setTimeout(() => setSuccessMessage(''), 3000);
+                        setShowPositionModal(false);
+                        fetchProducts();
+                      } catch (error: any) {
+                        setErrorMessage(error.message || 'Error al actualizar posiciones');
+                        setTimeout(() => setErrorMessage(''), 3000);
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white rounded-lg transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? <FiLoader className="animate-spin" /> : <FiCheck />}
+                    Guardar Posiciones
                   </button>
                 </div>
               </motion.div>

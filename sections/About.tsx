@@ -55,7 +55,7 @@ const values = [
 
 export default function About() {
   return (
-    <section id="nosotros" className="py-20 px-4 relative overflow-hidden">
+    <section id="nosotros" className="py-20 px-4 relative overflow-hidden scroll-mt-20">
       {/* Background Elements */}
       <div className="absolute top-20 right-10 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl" />
       <div className="absolute bottom-20 left-10 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl" />

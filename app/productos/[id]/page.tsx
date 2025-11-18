@@ -23,6 +23,7 @@ import {
   FiCreditCard,
   FiAward,
   FiLoader,
+  FiVideo,
 } from "react-icons/fi";
 import { supabase } from "@/lib/supabase";
 import Script from "next/script";
@@ -35,7 +36,7 @@ interface Product {
   CATEGORIA: string;
   SUBCATEGORIA?: string;
   image?: string;
-  stock?: boolean;
+  stock?: number;
 }
 
 export default function ProductDetailPage() {
@@ -177,9 +178,9 @@ export default function ProductDetailPage() {
       name: product.NOMBRE,
       description: product.DETALLE || '',
       price: numPrice,
-      image: (product.image || '/images/placeholder-product.jpg'),
+      image: productImages[0],
       category: product.CATEGORIA,
-      stock: true,
+      stock: ((product as any).STOCK || 0) > 0,
       quantity: quantity
     };
 
@@ -210,7 +211,20 @@ export default function ProductDetailPage() {
     }
   };
 
-  const productImages = product.image ? [product.image] : ['/images/placeholder-product.jpg'];
+  const imagenes = (product as any).IMAGENES || {};
+  const images = imagenes.images || [];
+  const videos = imagenes.videos || [];
+  const allMedia = [...images, ...videos];
+  const hasMedia = allMedia.length > 0;
+  const productImages = hasMedia ? allMedia : ['no-image'];
+  
+  const isVideo = (url: string) => {
+    return videos.includes(url);
+  };
+  
+  const isNoImage = (url: string) => {
+    return url === 'no-image';
+  };
 
   const nextImage = () => {
     setImageLoading(true);
@@ -240,7 +254,7 @@ export default function ProductDetailPage() {
       "priceCurrency": "CLP",
       "price": typeof product.PRECIO === 'string' ? parseFloat(product.PRECIO.replace(/[^\d.]/g, '')) : product.PRECIO,
       "itemCondition": "https://schema.org/NewCondition",
-      "availability": product.stock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "availability": ((product as any).STOCK || 0) > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       "seller": {
         "@type": "Organization",
         "name": "PCSystem Hualpén"
@@ -270,10 +284,6 @@ export default function ProductDetailPage() {
             className="flex items-center gap-2 text-sm text-gray-400 mb-8"
           >
             <Link href="/" className="hover:text-primary-400 transition-colors">
-              Inicio
-            </Link>
-            <span>/</span>
-            <Link href="/productos" className="hover:text-primary-400 transition-colors">
               Productos
             </Link>
             <span>/</span>
@@ -308,7 +318,7 @@ export default function ProductDetailPage() {
                 }}
               >
                 {/* Skeleton Loader */}
-                {imageLoading && (
+                {imageLoading && !isVideo(productImages[selectedImage]) && !isNoImage(productImages[selectedImage]) && (
                   <div className="absolute inset-0 z-10">
                     <div className="absolute inset-0 bg-gradient-to-r from-dark-700 via-dark-600 to-dark-700 animate-pulse">
                       <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-purple-500/20 animate-pulse" />
@@ -320,15 +330,35 @@ export default function ProductDetailPage() {
                   </div>
                 )}
                 
-                <Image
-                  src={productImages[selectedImage]}
-                  alt={product.NOMBRE}
-                  fill
-                  className={`object-cover transition-all duration-500 group-hover:scale-105 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
-                  priority
-                  onLoad={() => setImageLoading(false)}
-                  draggable={false}
-                />
+                {isNoImage(productImages[selectedImage]) ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-dark-800 via-dark-700 to-primary-900/30 text-gray-400">
+                    <svg className="w-32 h-32 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-4xl mb-3">:(</span>
+                    <span className="text-xl font-semibold">Sin foto disponible</span>
+                  </div>
+                ) : isVideo(productImages[selectedImage]) ? (
+                  <video
+                    key={productImages[selectedImage]}
+                    src={productImages[selectedImage]}
+                    controls
+                    autoPlay
+                    muted
+                    className="w-full h-full object-cover"
+                    onLoadedData={() => setImageLoading(false)}
+                  />
+                ) : (
+                  <Image
+                    src={productImages[selectedImage]}
+                    alt={product.NOMBRE}
+                    fill
+                    className={`object-cover transition-all duration-500 group-hover:scale-105 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+                    priority
+                    onLoad={() => setImageLoading(false)}
+                    draggable={false}
+                  />
+                )}
                 
                 {/* Navigation Arrows - Hidden on mobile, visible on hover desktop */}
                 {productImages.length > 1 && (
@@ -379,7 +409,7 @@ export default function ProductDetailPage() {
 
               {/* Thumbnail Gallery */}
               <div className="grid grid-cols-4 gap-3">
-                {productImages.map((img, idx) => (
+                {productImages.map((media, idx) => (
                   <motion.button
                     key={idx}
                     onClick={() => {
@@ -395,17 +425,37 @@ export default function ProductDetailPage() {
                     }`}
                   >
                     {/* Thumbnail Skeleton */}
-                    {thumbnailsLoading[idx] !== false && (
+                    {thumbnailsLoading[idx] !== false && !isVideo(media) && !isNoImage(media) && (
                       <div className="absolute inset-0 bg-gradient-to-r from-dark-700 via-dark-600 to-dark-700 animate-pulse" />
                     )}
                     
-                    <Image 
-                      src={img} 
-                      alt={`${product.NOMBRE} ${idx + 1}`} 
-                      fill 
-                      className={`object-cover transition-opacity duration-300 ${thumbnailsLoading[idx] !== false ? 'opacity-0' : 'opacity-100'}`}
-                      onLoad={() => setThumbnailsLoading(prev => ({ ...prev, [idx]: false }))}
-                    />
+                    {isNoImage(media) ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-dark-700 text-gray-500">
+                        <svg className="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-xs">:(</span>
+                      </div>
+                    ) : isVideo(media) ? (
+                      <>
+                        <video 
+                          src={media} 
+                          className="w-full h-full object-cover"
+                          muted
+                        />
+                        <div className="absolute inset-0 bg-dark-900/50 flex items-center justify-center">
+                          <FiVideo className="text-3xl text-white" />
+                        </div>
+                      </>
+                    ) : (
+                      <Image 
+                        src={media} 
+                        alt={`${product.NOMBRE} ${idx + 1}`} 
+                        fill 
+                        className={`object-cover transition-opacity duration-300 ${thumbnailsLoading[idx] !== false ? 'opacity-0' : 'opacity-100'}`}
+                        onLoad={() => setThumbnailsLoading(prev => ({ ...prev, [idx]: false }))}
+                      />
+                    )}
                     
                     {selectedImage === idx && (
                       <div className="absolute inset-0 bg-primary-500/20 flex items-center justify-center z-10">
@@ -724,13 +774,30 @@ export default function ProductDetailPage() {
                       className="bg-gradient-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden h-full hover:border-primary-400 hover:shadow-2xl hover:shadow-primary-500/30 transition-all duration-300"
                     >
                       <div className="relative h-48 bg-gradient-to-br from-primary-600/20 via-dark-700 to-purple-600/20 overflow-hidden">
-                        <Image
-                          src={(relatedProduct.image || '/images/placeholder-product.jpg')}
-                          alt={relatedProduct.NOMBRE}
-                          fill
-                          className="object-cover group-hover:scale-110 transition-transform duration-500"
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                        />
+                        {(() => {
+                          const imagenes = (relatedProduct as any).IMAGENES || {};
+                          const images = imagenes.images || [];
+                          const mainIndex = imagenes.mainImageIndex || 0;
+                          const mainImage = images[mainIndex] || images[0];
+                          
+                          return mainImage ? (
+                            <Image
+                              src={mainImage}
+                              alt={relatedProduct.NOMBRE}
+                              fill
+                              className="object-cover group-hover:scale-110 transition-transform duration-500"
+                              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-500">
+                              <svg className="w-16 h-16 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              <span className="text-xl mb-1">:(</span>
+                              <span className="text-xs">Sin foto</span>
+                            </div>
+                          );
+                        })()}
                         <div className="absolute inset-0 bg-gradient-to-t from-dark-900/80 to-transparent" />
                       </div>
                       <div className="p-5">

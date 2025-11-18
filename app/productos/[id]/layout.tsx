@@ -32,8 +32,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(numPrice);
   };
 
+  const imagenes = (product as any).IMAGENES || {};
+  const images = imagenes.images || [];
+  const mainIndex = imagenes.mainImageIndex || 0;
+  const mainImage = images[mainIndex] || images[0] || '/images/placeholder-product.jpg';
+
   const title = `${product.NOMBRE} - ${formatPrice(product.PRECIO)}`
-  const description = product.DETALLE || `Compra ${product.NOMBRE} en PCSystem Hualpén. ${product.stock ? '✓ En stock' : 'Consultar disponibilidad'}.`
+  const description = product.DETALLE || `Compra ${product.NOMBRE} en PCSystem Hualpén. ${((product as any).STOCK || 0) > 0 ? '✓ En stock' : 'Consultar disponibilidad'}.`
 
   return {
     title,
@@ -52,7 +57,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       images: [
         {
-          url: product.image || '/images/placeholder-product.jpg',
+          url: mainImage,
           width: 800,
           height: 600,
           alt: product.NOMBRE,
@@ -66,7 +71,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: 'summary_large_image',
       title,
       description,
-      images: [product.image || '/images/placeholder-product.jpg'],
+      images: [mainImage],
     },
     alternates: {
       canonical: `https://pcsystem.cl/productos/${id}`,

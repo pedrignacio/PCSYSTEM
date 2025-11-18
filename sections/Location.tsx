@@ -79,7 +79,7 @@ export default function Location() {
   };
 
   return (
-    <section id="ubicacion" className="py-20 px-4 relative overflow-hidden">
+    <section id="ubicacion" className="py-20 px-4 relative overflow-hidden scroll-mt-20">
       {/* Background Elements */}
       <div className="absolute top-10 left-10 w-64 h-64 bg-red-500/10 rounded-full blur-3xl" />
       <div className="absolute bottom-10 right-10 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
