@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { FiX, FiCheck, FiRotateCw, FiZoomIn, FiZoomOut, FiShoppingCart, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiX, FiCheck, FiRotateCw, FiZoomIn, FiZoomOut, FiShoppingCart, FiChevronLeft, FiChevronRight, FiLoader } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
@@ -34,6 +34,7 @@ export default function ImageCropper({
   const [scale, setScale] = useState(1);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [currentPreviewSize, setCurrentPreviewSize] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -192,6 +193,7 @@ export default function ImageCropper({
 
   const handleSave = async () => {
     try {
+      setIsSaving(true);
       const croppedImageUrl = await getCroppedImg();
       if (croppedImageUrl) {
         onSave(croppedImageUrl, {
@@ -202,6 +204,8 @@ export default function ImageCropper({
     } catch (error) {
       console.error('Error al procesar la imagen:', error);
       alert('Error al procesar la imagen. Por favor, intenta de nuevo.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -315,16 +319,27 @@ export default function ImageCropper({
           <div className="bg-dark-800 border-t border-dark-700 p-4 flex justify-end gap-4">
             <button
               onClick={onCancel}
-              className="px-6 py-3 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition-colors"
+              disabled={isSaving}
+              className="px-6 py-3 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancelar
             </button>
             <button
               onClick={handleSave}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white rounded-lg transition-all duration-300 font-semibold"
+              disabled={isSaving}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white rounded-lg transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <FiCheck />
-              Aplicar
+              {isSaving ? (
+                <>
+                  <FiLoader className="animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <FiCheck />
+                  Aplicar
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -341,7 +356,8 @@ export default function ImageCropper({
           <div className="flex items-center justify-between mb-6">
             <button
               onClick={() => setCurrentPreviewSize((prev) => (prev - 1 + previewSizes.length) % previewSizes.length)}
-              className="p-2 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors"
+              disabled={isSaving}
+              className="p-2 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FiChevronLeft className="text-white" />
             </button>
@@ -355,7 +371,8 @@ export default function ImageCropper({
 
             <button
               onClick={() => setCurrentPreviewSize((prev) => (prev + 1) % previewSizes.length)}
-              className="p-2 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors"
+              disabled={isSaving}
+              className="p-2 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FiChevronRight className="text-white" />
             </button>

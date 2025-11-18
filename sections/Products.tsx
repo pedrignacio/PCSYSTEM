@@ -106,8 +106,7 @@ export default function Products() {
       const { data, error } = await supabase
         .from('Productos')
         .select('*')
-        .order('POSICION', { ascending: true })
-        .order('id', { ascending: true });
+        .order('POSICION', { ascending: true });
 
       if (error) throw error;
       

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
   FiPackage,
@@ -21,6 +20,7 @@ import {
   FiCheck,
   FiSearch,
   FiLogOut,
+  FiList,
 } from "react-icons/fi";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
@@ -73,6 +73,10 @@ export default function AdminPage() {
   const [uploading, setUploading] = useState(false);
   const [showImageCropper, setShowImageCropper] = useState(false);
   const [currentImageToCrop, setCurrentImageToCrop] = useState<{ url: string; index: number } | null>(null);
+  const [showPositionModal, setShowPositionModal] = useState(false);
+  const [orderedProducts, setOrderedProducts] = useState<Product[]>([]);
+  const [positionSearchTerm, setPositionSearchTerm] = useState("");
+  const [draggedItem, setDraggedItem] = useState<number | null>(null);
 
   const [productForm, setProductForm] = useState<Product>({
     NOMBRE: "",
@@ -115,7 +119,7 @@ export default function AdminPage() {
       const { data, error } = await supabase
         .from('Productos')
         .select('*')
-        .order('id', { ascending: false });
+        .order('POSICION', { ascending: true });
 
       if (error) throw error;
       setProducts(data || []);
@@ -297,6 +301,12 @@ export default function AdminPage() {
 
   const handleOpenAddProduct = () => {
     setEditingProduct(null);
+    
+    // Calculate next position (max position + 1)
+    const maxPosition = products.length > 0 
+      ? Math.max(...products.map(p => p.POSICION || 0)) 
+      : -1;
+    
     setProductForm({
       NOMBRE: "",
       CATEGORIA: categories[0],
@@ -307,7 +317,7 @@ export default function AdminPage() {
       videos: [],
       mainImageIndex: 0,
       stock: 0,
-      POSICION: 0,
+      POSICION: maxPosition + 1,
       NUM_VENTAS: 0,
       imageCropData: {},
     });
@@ -343,6 +353,10 @@ export default function AdminPage() {
 
       setLoading(true);
 
+      const newPosition = typeof productForm.POSICION === 'string' 
+        ? parseInt(productForm.POSICION) 
+        : (productForm.POSICION || 0);
+
       const productData = {
         NOMBRE: productForm.NOMBRE,
         DETALLE: productForm.DETALLE || null,
@@ -352,7 +366,7 @@ export default function AdminPage() {
         CATEGORIA: productForm.CATEGORIA,
         SUBCATEGORIA: productForm.SUBCATEGORIA || null,
         STOCK: typeof productForm.stock === 'string' ? parseInt(productForm.stock) : (productForm.stock || 0),
-        POSICION: typeof productForm.POSICION === 'string' ? parseInt(productForm.POSICION) : (productForm.POSICION || 0),
+        POSICION: newPosition,
         NUM_VENTAS: typeof productForm.NUM_VENTAS === 'string' ? parseInt(productForm.NUM_VENTAS) : (productForm.NUM_VENTAS || 0),
         IMAGENES: {
           images: productForm.images || [],
@@ -363,6 +377,35 @@ export default function AdminPage() {
       };
 
       if (editingProduct?.id) {
+        // Editing existing product
+        const oldPosition = editingProduct.POSICION || 0;
+        
+        // If position changed, update other products
+        if (oldPosition !== newPosition) {
+          // Get all products except the one being edited
+          const otherProducts = products.filter(p => p.id !== editingProduct.id);
+          
+          // Update positions of affected products
+          for (const product of otherProducts) {
+            const currentPos = product.POSICION || 0;
+            let newPos = currentPos;
+            
+            // If inserting into a position
+            if (newPosition <= currentPos && currentPos < oldPosition) {
+              newPos = currentPos + 1;
+            } else if (oldPosition < currentPos && currentPos <= newPosition) {
+              newPos = currentPos - 1;
+            }
+            
+            if (newPos !== currentPos) {
+              await supabase
+                .from('Productos')
+                .update({ POSICION: newPos })
+                .eq('id', product.id);
+            }
+          }
+        }
+
         const { error } = await supabase
           .from('Productos')
           .update(productData)
@@ -371,11 +414,26 @@ export default function AdminPage() {
         if (error) throw error;
         showSuccess("Producto actualizado exitosamente");
       } else {
-        const { error } = await supabase
+        // Creating new product - first insert, then adjust positions
+        const { data: newProduct, error: insertError } = await supabase
           .from('Productos')
-          .insert([productData]);
+          .insert([productData])
+          .select()
+          .single();
 
-        if (error) throw error;
+        if (insertError) throw insertError;
+        
+        // Now shift positions of existing products at or after new position
+        for (const product of products) {
+          const currentPos = product.POSICION || 0;
+          if (currentPos >= newPosition && product.id !== newProduct.id) {
+            await supabase
+              .from('Productos')
+              .update({ POSICION: currentPos + 1 })
+              .eq('id', product.id);
+          }
+        }
+        
         showSuccess("Producto creado exitosamente");
       }
 
@@ -393,12 +451,31 @@ export default function AdminPage() {
 
     try {
       setLoading(true);
+      
+      // Get the position of the product being deleted
+      const productToDelete = products.find(p => p.id === id);
+      const deletedPosition = productToDelete?.POSICION || 0;
+      
+      // Delete the product
       const { error } = await supabase
         .from('Productos')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
+      
+      // Update positions of products that were after the deleted one
+      const productsToUpdate = products.filter(p => 
+        p.id !== id && (p.POSICION || 0) > deletedPosition
+      );
+      
+      for (const product of productsToUpdate) {
+        await supabase
+          .from('Productos')
+          .update({ POSICION: (product.POSICION || 0) - 1 })
+          .eq('id', product.id);
+      }
+      
       showSuccess("Producto eliminado exitosamente");
       fetchProducts();
     } catch (error: any) {
@@ -439,8 +516,7 @@ export default function AdminPage() {
 
   return (
     <>
-      <Header />
-      <main className="min-h-screen pt-24 pb-20 px-4 bg-dark-900">
+      <main className="min-h-screen pt-8 pb-20 px-4 bg-dark-900">
         <div className="container mx-auto max-w-7xl">
           {/* Success/Error Messages */}
           <AnimatePresence>
@@ -510,6 +586,16 @@ export default function AdminPage() {
                 className="w-full pl-12 pr-4 py-3 bg-dark-800 border border-dark-700 rounded-lg focus:outline-none focus:border-primary-500 text-white"
               />
             </div>
+            <button
+              onClick={() => {
+                setOrderedProducts([...products]);
+                setShowPositionModal(true);
+              }}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg"
+            >
+              <FiList />
+              Ver Posiciones
+            </button>
             <button
               onClick={handleOpenAddProduct}
               className="flex items-center gap-2 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg"
@@ -617,7 +703,7 @@ export default function AdminPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+              className="fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center z-50 p-4"
               onClick={() => setShowProductModal(false)}
             >
               <motion.div
@@ -625,7 +711,7 @@ export default function AdminPage() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-dark-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-dark-700"
+                className="bg-dark-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border-2 border-dark-700 shadow-2xl"
               >
                 <div className="sticky top-0 bg-dark-800 border-b border-dark-700 p-6 flex items-center justify-between z-10">
                   <h2 className="text-2xl font-bold text-white">
@@ -895,6 +981,175 @@ export default function AdminPage() {
               onCancel={handleCancelCrop}
               initialCrop={productForm.imageCropData?.[currentImageToCrop.index]?.crop}
             />
+          )}
+        </AnimatePresence>
+
+        {/* Position Management Modal */}
+        <AnimatePresence>
+          {showPositionModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+              onClick={() => setShowPositionModal(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-dark-800 rounded-2xl w-full max-w-4xl max-h-[90vh] border border-dark-700 flex flex-col"
+              >
+                {/* Header */}
+                <div className="bg-dark-800 border-b border-dark-700 p-6 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-1">Gestionar Posiciones</h2>
+                    <p className="text-gray-400 text-sm">Arrastra los productos para reordenarlos</p>
+                  </div>
+                  <button
+                    onClick={() => setShowPositionModal(false)}
+                    className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
+                  >
+                    <FiX className="text-2xl text-gray-400" />
+                  </button>
+                </div>
+
+                {/* Search */}
+                <div className="p-6 border-b border-dark-700">
+                  <div className="relative">
+                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Filtrar productos..."
+                      value={positionSearchTerm}
+                      onChange={(e) => setPositionSearchTerm(e.target.value)}
+                      className="w-full pl-12 pr-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Products List */}
+                <div className="flex-1 overflow-y-auto p-6">
+                  <div className="space-y-2">
+                    {orderedProducts
+                      .filter((p) =>
+                        p.NOMBRE?.toLowerCase().includes(positionSearchTerm.toLowerCase()) ||
+                        p.CATEGORIA?.toLowerCase().includes(positionSearchTerm.toLowerCase())
+                      )
+                      .map((product, index) => {
+                        const actualIndex = orderedProducts.indexOf(product);
+                        const imagenes = (product as any).IMAGENES || {};
+                        const images = imagenes.images || [];
+                        const mainIndex = imagenes.mainImageIndex || 0;
+                        const mainImage = images[mainIndex] || images[0] || null;
+
+                        return (
+                          <div
+                            key={product.id}
+                            draggable
+                            onDragStart={() => setDraggedItem(actualIndex)}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (draggedItem !== null && draggedItem !== actualIndex) {
+                                const newOrder = [...orderedProducts];
+                                const [removed] = newOrder.splice(draggedItem, 1);
+                                newOrder.splice(actualIndex, 0, removed);
+                                setOrderedProducts(newOrder);
+                              }
+                              setDraggedItem(null);
+                            }}
+                            className={`flex items-center gap-4 p-4 bg-dark-700 rounded-lg border-2 transition-all cursor-move hover:border-primary-500/50 ${
+                              draggedItem === actualIndex
+                                ? 'border-primary-500 opacity-50'
+                                : 'border-dark-600'
+                            }`}
+                          >
+                            <div className="flex items-center justify-center w-12 h-12 bg-dark-600 rounded-lg text-white font-bold text-lg">
+                              {actualIndex + 1}
+                            </div>
+                            
+                            {mainImage && (
+                              <div className="w-16 h-16 relative bg-dark-600 rounded-lg overflow-hidden shrink-0">
+                                <Image
+                                  src={mainImage}
+                                  alt={product.NOMBRE}
+                                  fill
+                                  className="object-cover"
+                                  sizes="64px"
+                                />
+                              </div>
+                            )}
+
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-white font-semibold truncate">{product.NOMBRE}</h3>
+                              <p className="text-gray-400 text-sm">{product.CATEGORIA}</p>
+                            </div>
+
+                            <div className="text-right">
+                              <p className="text-primary-400 font-bold">
+                                {typeof product.PRECIO === 'number'
+                                  ? `$${product.PRECIO.toLocaleString('es-CL')}`
+                                  : product.PRECIO}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="bg-dark-800 border-t border-dark-700 p-6 flex justify-end gap-4">
+                  <button
+                    onClick={() => setShowPositionModal(false)}
+                    className="px-6 py-3 bg-dark-700 hover:bg-dark-600 text-white rounded-lg transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        setLoading(true);
+                        
+                        // Update positions for all products (starting from 1)
+                        const updates = orderedProducts.map((product, index) => ({
+                          id: product.id,
+                          POSICION: index + 1
+                        }));
+
+                        for (const update of updates) {
+                          const { error } = await supabase
+                            .from('Productos')
+                            .update({ POSICION: update.POSICION })
+                            .eq('id', update.id);
+
+                          if (error) throw error;
+                        }
+
+                        setSuccessMessage('Posiciones actualizadas correctamente');
+                        setTimeout(() => setSuccessMessage(''), 3000);
+                        setShowPositionModal(false);
+                        fetchProducts();
+                      } catch (error: any) {
+                        setErrorMessage(error.message || 'Error al actualizar posiciones');
+                        setTimeout(() => setErrorMessage(''), 3000);
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white rounded-lg transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? <FiLoader className="animate-spin" /> : <FiCheck />}
+                    Guardar Posiciones
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
           )}
         </AnimatePresence>
       </main>
