@@ -21,6 +21,10 @@ import {
   FiSearch,
   FiLogOut,
   FiList,
+  FiTrendingDown,
+  FiAlertTriangle,
+  FiArrowUp,
+  FiArrowDown,
 } from "react-icons/fi";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
@@ -78,6 +82,8 @@ export default function AdminPage() {
   const [orderedProducts, setOrderedProducts] = useState<Product[]>([]);
   const [positionSearchTerm, setPositionSearchTerm] = useState("");
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
+  const [sortBy, setSortBy] = useState<'position' | 'stock'>('position');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const [productForm, setProductForm] = useState<Product>({
     NOMBRE: "",
@@ -107,14 +113,30 @@ export default function AdminPage() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    const filtered = products.filter(p => {
+    let filtered = products.filter(p => {
       const matchesCategory = selectedCategory === "all" || p.CATEGORIA === selectedCategory;
       const matchesSearch = p.NOMBRE.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            p.CATEGORIA.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesCategory && matchesSearch;
     });
+
+    // Aplicar ordenamiento
+    if (sortBy === 'stock') {
+      filtered = filtered.sort((a, b) => {
+        const stockA = (a as any).STOCK || 0;
+        const stockB = (b as any).STOCK || 0;
+        return sortOrder === 'asc' ? stockA - stockB : stockB - stockA;
+      });
+    } else {
+      filtered = filtered.sort((a, b) => {
+        const posA = a.POSICION || 0;
+        const posB = b.POSICION || 0;
+        return sortOrder === 'asc' ? posA - posB : posB - posA;
+      });
+    }
+
     setFilteredProducts(filtered);
-  }, [searchTerm, selectedCategory, products]);
+  }, [searchTerm, selectedCategory, products, sortBy, sortOrder]);
 
   const fetchProducts = async () => {
     try {
@@ -575,6 +597,49 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+            
+            <div className="bg-dark-800 border border-red-500/30 rounded-xl p-6 cursor-pointer hover:border-red-500/50 transition-colors"
+                 onClick={() => {
+                   setSelectedCategory("all");
+                   setSortBy("stock");
+                   setSortOrder("asc");
+                   setSearchTerm("");
+                 }}>
+              <div className="flex items-center gap-4">
+                <div className="bg-red-500/20 p-3 rounded-lg">
+                  <FiAlertTriangle className="text-2xl text-red-400" />
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Sin Stock</p>
+                  <p className="text-3xl font-bold text-white">
+                    {products.filter(p => ((p as any).STOCK || 0) === 0).length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-dark-800 border border-yellow-500/30 rounded-xl p-6 cursor-pointer hover:border-yellow-500/50 transition-colors"
+                 onClick={() => {
+                   setSelectedCategory("all");
+                   setSortBy("stock");
+                   setSortOrder("asc");
+                   setSearchTerm("");
+                 }}>
+              <div className="flex items-center gap-4">
+                <div className="bg-yellow-500/20 p-3 rounded-lg">
+                  <FiTrendingDown className="text-2xl text-yellow-400" />
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Stock Bajo (&lt;5)</p>
+                  <p className="text-3xl font-bold text-white">
+                    {products.filter(p => {
+                      const stock = (p as any).STOCK || 0;
+                      return stock > 0 && stock < 5;
+                    }).length}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Search and Add Button */}
@@ -618,6 +683,51 @@ export default function AdminPage() {
                 className="w-full pl-12 pr-4 py-3 bg-dark-800 border border-dark-700 rounded-lg focus:outline-none focus:border-primary-500 text-white"
               />
             </div>
+            
+            {/* Sort Buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  if (sortBy === 'position') {
+                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                  } else {
+                    setSortBy('position');
+                    setSortOrder('asc');
+                  }
+                }}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 font-semibold ${
+                  sortBy === 'position'
+                    ? 'bg-primary-500 text-white shadow-lg'
+                    : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
+                }`}
+              >
+                Posición
+                {sortBy === 'position' && (
+                  sortOrder === 'asc' ? <FiArrowUp /> : <FiArrowDown />
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  if (sortBy === 'stock') {
+                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                  } else {
+                    setSortBy('stock');
+                    setSortOrder('asc');
+                  }
+                }}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all duration-300 font-semibold ${
+                  sortBy === 'stock'
+                    ? 'bg-primary-500 text-white shadow-lg'
+                    : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
+                }`}
+              >
+                Stock
+                {sortBy === 'stock' && (
+                  sortOrder === 'asc' ? <FiArrowUp /> : <FiArrowDown />
+                )}
+              </button>
+            </div>
+            
             <button
               onClick={() => {
                 setOrderedProducts([...products]);

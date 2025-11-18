@@ -284,10 +284,6 @@ export default function ProductDetailPage() {
             className="flex items-center gap-2 text-sm text-gray-400 mb-8"
           >
             <Link href="/" className="hover:text-primary-400 transition-colors">
-              Inicio
-            </Link>
-            <span>/</span>
-            <Link href="/productos" className="hover:text-primary-400 transition-colors">
               Productos
             </Link>
             <span>/</span>
