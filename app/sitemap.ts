@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
-import { supabase } from '@/lib/supabase'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://pcsystem.cl'
@@ -44,23 +45,38 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
-  // Obtener productos desde Supabase
-  const { data: products, error } = await supabase
-    .from('PRODUCTOS')
-    .select('ID')
+  // Obtener productos desde el backend
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 segundos timeout
+    
+    const response = await fetch(`${API_URL}/api/pcs?all=true`, {
+      signal: controller.signal,
+      next: { revalidate: 3600 } // Cache por 1 hora
+    })
+    
+    clearTimeout(timeoutId)
+    
+    if (!response.ok) {
+      console.warn('Backend not available during build, using static pages only')
+      return staticPages
+    }
+    
+    const products = await response.json()
 
-  if (error || !products) {
-    console.error('Error fetching products for sitemap:', error)
+    // Páginas dinámicas de productos
+    const productPages: MetadataRoute.Sitemap = products.map((product: any) => ({
+      url: `${baseUrl}/productos/${product.id}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    }))
+
+    return [...staticPages, ...productPages]
+  } catch (error) {
+    // Durante el build, el backend puede no estar disponible
+    // En producción, se regenerará con ISR
+    console.warn('Sitemap generated with static pages only (backend not available during build)')
     return staticPages
   }
-
-  // Páginas dinámicas de productos
-  const productPages: MetadataRoute.Sitemap = products.map((product) => ({
-    url: `${baseUrl}/productos/${product.ID}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.8,
-  }))
-
-  return [...staticPages, ...productPages]
 }

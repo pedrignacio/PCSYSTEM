@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   FiCpu,
   FiMonitor,
@@ -17,7 +18,7 @@ import {
 } from "react-icons/fi";
 import { IoGameController } from "react-icons/io5";
 import { MdToys } from "react-icons/md";
-import { supabase } from "@/lib/supabase";
+import { apiService } from "@/lib/api";
 import React from "react";
 import Cart from "./Cart";
 import { useToast } from '@/hooks/useToast';
@@ -58,8 +59,17 @@ interface Category {
 }
 
 export default function Products() {
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Leer parámetros de la URL
+  const urlPage = searchParams.get('page');
+  const urlCategory = searchParams.get('category');
+  const urlSearch = searchParams.get('q');
+  
+  const [selectedCategory, setSelectedCategory] = useState(urlCategory || "all");
+  const [searchTerm, setSearchTerm] = useState(urlSearch || "");
+  const [searchInput, setSearchInput] = useState(urlSearch || ""); // Input inmediato
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,19 +78,110 @@ export default function Products() {
   const [cartCount, setCartCount] = useState(0);
   const { toasts, showToast, removeToast } = useToast();
 
-  // Estados para paginación
-  const [currentPage, setCurrentPage] = useState(1);
-  const [productsPerPage] = useState(12); // 12 productos por página
+  // Estados para paginación del backend
+  const [currentPage, setCurrentPage] = useState(parseInt(urlPage || '1'));
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const productsPerPage = 12;
 
-  // Cargar productos y generar categorías dinámicamente
+  // Sincronizar estado con URL params
+  useEffect(() => {
+    const page = searchParams.get('page');
+    const category = searchParams.get('category');
+    const search = searchParams.get('q');
+    
+    setCurrentPage(parseInt(page || '1'));
+    setSelectedCategory(category || 'all');
+    setSearchTerm(search || '');
+    setSearchInput(search || '');
+  }, [searchParams]);
+
+  // Debounce para la búsqueda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== searchTerm) {
+        handleSearchChange(searchInput);
+      }
+    }, 500); // Esperar 500ms después de que el usuario deje de escribir
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Función para actualizar la URL con los parámetros
+  const updateURL = (page?: number, category?: string, search?: string) => {
+    const params = new URLSearchParams();
+    
+    const finalPage = page !== undefined ? page : currentPage;
+    const finalCategory = category !== undefined ? category : selectedCategory;
+    const finalSearch = search !== undefined ? search : searchTerm;
+    
+    if (finalPage > 1) {
+      params.set('page', finalPage.toString());
+    }
+    
+    if (finalCategory && finalCategory !== 'all') {
+      params.set('category', finalCategory);
+    }
+    
+    if (finalSearch) {
+      params.set('q', finalSearch);
+    }
+    
+    const queryString = params.toString();
+    const newUrl = queryString ? `/productos?${queryString}` : '/productos';
+    
+    router.push(newUrl, { scroll: false });
+  };
+
+  // Manejar cambio de categoría
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    setCurrentPage(1);
+    updateURL(1, category, searchTerm);
+  };
+
+  // Manejar cambio de búsqueda
+  const handleSearchChange = (search: string) => {
+    setSearchTerm(search);
+    setCurrentPage(1);
+    updateURL(1, selectedCategory, search);
+  };
+
+  // Manejar cambio de página
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    updateURL(page, selectedCategory, searchTerm);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Cargar productos cuando cambia la página, categoría o búsqueda
   useEffect(() => {
     fetchProducts();
+  }, [currentPage, selectedCategory, searchTerm]);
+
+  // Cargar categorías una sola vez al montar el componente
+  useEffect(() => {
+    fetchCategories();
   }, []);
 
-  // Reset página cuando cambia filtro
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedCategory, searchTerm]);
+  const fetchCategories = async () => {
+    try {
+      const categoriesResponse = await apiService.getCategories();
+      
+      const categoryList: Category[] = [
+        { id: "all", name: "Todos", icon: React.createElement(FiCpu) },
+        ...categoriesResponse.map((cat: string) => ({
+          id: cat,
+          name: categoryMapping[cat]?.name || cat,
+          icon: categoryMapping[cat]?.icon || React.createElement(FiMonitor)
+        }))
+      ];
+      
+      setCategories(categoryList);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    }
+  };
 
   // Actualizar contador del carrito
   useEffect(() => {
@@ -103,42 +204,33 @@ export default function Products() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('Productos')
-        .select('*')
-        .order('POSICION', { ascending: true });
-
-      if (error) throw error;
       
-      console.log('Datos recibidos de Supabase:', data);
-      console.log('Cantidad de productos recibidos:', data?.length || 0);
+      // Si hay búsqueda o filtro, usar el endpoint de búsqueda
+      let response;
+      if (searchTerm || selectedCategory !== 'all') {
+        response = await apiService.searchPCs({
+          q: searchTerm || undefined,
+          category: selectedCategory !== 'all' ? selectedCategory : undefined,
+          page: currentPage,
+          limit: productsPerPage
+        });
+      } else {
+        // Si no hay filtros, usar el endpoint normal
+        response = await apiService.getPCs(currentPage, productsPerPage);
+      }
       
-      const validProducts = (data || []).filter((product: any) => {
+      console.log('Respuesta del backend:', response);
+      
+      const validProducts = (response.data || []).filter((product: any) => {
         const hasName = product.NOMBRE && product.NOMBRE.trim() !== '';
         return hasName;
       });
       
-      console.log('Productos válidos después del filtro:', validProducts.length);
+      console.log('Productos válidos:', validProducts.length);
       
       setProducts(validProducts);
-      
-      // Generar categorías únicas
-      const uniqueCategories = Array.from(
-        new Set(validProducts.map((p: any) => p.CATEGORIA).filter(Boolean))
-      ) as string[];
-      
-      console.log('Categorías encontradas:', uniqueCategories);
-      
-      const categoryList: Category[] = [
-        { id: "all", name: "Todos", icon: React.createElement(FiCpu) },
-        ...uniqueCategories.map((cat: string) => ({
-          id: cat,
-          name: categoryMapping[cat]?.name || cat,
-          icon: categoryMapping[cat]?.icon || React.createElement(FiMonitor)
-        }))
-      ];
-      
-      setCategories(categoryList);
+      setTotalPages(response.pagination?.totalPages || 1);
+      setTotalProducts(response.pagination?.total || 0);
       
     } catch (err: any) {
       setError(err.message);
@@ -148,19 +240,11 @@ export default function Products() {
     }
   };
 
-  // Filtrar productos
-  const filteredProducts = products.filter(product => {
-    const matchesCategory = selectedCategory === "all" || product.CATEGORIA === selectedCategory;
-    const matchesSearch = product.NOMBRE?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.DETALLE?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  // Filtrar productos (ahora se hace en el backend, pero dejamos esto para mantener compatibilidad)
+  const filteredProducts = products;
 
-  // Cálculos de paginación
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
-  const indexOfLastProduct = currentPage * productsPerPage;
-  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+  // Los productos ya vienen paginados del backend
+  const currentProducts = filteredProducts;
 
   const formatPrice = (price: number | string) => {
     let numPrice = 0;
@@ -267,6 +351,24 @@ export default function Products() {
     return 280 / 192;
   };
 
+  // Función para generar slug a partir del nombre del producto
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
+      .replace(/[^a-z0-9\s-]/g, '') // Eliminar caracteres especiales
+      .trim()
+      .replace(/\s+/g, '-') // Reemplazar espacios con guiones
+      .replace(/-+/g, '-'); // Eliminar guiones múltiples
+  };
+
+  // Función para generar URL del producto
+  const getProductUrl = (product: Product) => {
+    const slug = generateSlug(product.NOMBRE);
+    return `/productos/${product.id}/${slug}`;
+  };
+
   // Componente de paginación
   const Pagination = () => {
     if (totalPages <= 1) return null;
@@ -293,7 +395,7 @@ export default function Products() {
       <div className="flex items-center justify-center gap-2 mt-12">
         {/* Botón Anterior */}
         <button
-          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+          onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
             currentPage === 1
@@ -309,7 +411,7 @@ export default function Products() {
         {getPageNumbers().map((page) => (
           <button
             key={page}
-            onClick={() => setCurrentPage(page)}
+            onClick={() => handlePageChange(page)}
             className={`w-10 h-10 rounded-lg transition-all ${
               currentPage === page
                 ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/50'
@@ -322,7 +424,7 @@ export default function Products() {
 
         {/* Botón Siguiente */}
         <button
-          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+          onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
             currentPage === totalPages
@@ -411,8 +513,8 @@ export default function Products() {
             <input
               type="text"
               placeholder="Buscar productos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="w-full px-6 py-3 bg-dark-800 border border-dark-700 rounded-lg focus:outline-none focus:border-primary-500 transition-colors text-white"
             />
           </div>
@@ -429,7 +531,7 @@ export default function Products() {
             {categories.map((category) => (
               <button
                 key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
+                onClick={() => handleCategoryChange(category.id)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
                   selectedCategory === category.id
                     ? "bg-primary-500 text-white shadow-lg shadow-primary-500/50"
@@ -443,16 +545,52 @@ export default function Products() {
           </div>
         </motion.div>
 
-        {/* Products Count */}
-        <div className="text-center mb-8">
-          <p className="text-gray-400">
-            Mostrando {indexOfFirstProduct + 1}-{Math.min(indexOfLastProduct, filteredProducts.length)} de {filteredProducts.length} productos
+        {/* Products Count with Mini Pagination */}
+        <div className="flex items-center justify-between mb-8 max-w-7xl mx-auto">
+          <div className="flex-1"></div>
+          <p className="text-gray-400 text-center">
+            Mostrando {((currentPage - 1) * productsPerPage) + 1}-{Math.min(currentPage * productsPerPage, totalProducts)} de {totalProducts} productos
             {totalPages > 1 && (
               <span className="ml-2">
                 (Página {currentPage} de {totalPages})
               </span>
             )}
           </p>
+          
+          {/* Mini Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1 flex-1 justify-end">
+              <button
+                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className={`p-1.5 rounded transition-all ${
+                  currentPage === 1
+                    ? 'text-gray-600 cursor-not-allowed'
+                    : 'text-gray-400 hover:text-primary-400 hover:bg-dark-800'
+                }`}
+                title="Página anterior"
+              >
+                <FiChevronLeft className="text-lg" />
+              </button>
+              
+              <span className="text-sm text-gray-500 px-2 min-w-[60px] text-center">
+                {currentPage}/{totalPages}
+              </span>
+              
+              <button
+                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className={`p-1.5 rounded transition-all ${
+                  currentPage === totalPages
+                    ? 'text-gray-600 cursor-not-allowed'
+                    : 'text-gray-400 hover:text-primary-400 hover:bg-dark-800'
+                }`}
+                title="Página siguiente"
+              >
+                <FiChevronRight className="text-lg" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Products Grid */}
@@ -466,7 +604,7 @@ export default function Products() {
                 transition={{ duration: 0.4, delay: index * 0.05 }}
                 whileHover={{ y: -12, scale: 1.03 }}
                 className="group cursor-pointer h-full"
-                onClick={() => window.location.href = `/productos/${product.id}`}
+                onClick={() => router.push(getProductUrl(product))}
               >
                 <div className="bg-gradient-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden h-full hover:border-primary-400 hover:shadow-2xl hover:shadow-primary-500/30 transition-all duration-300 flex flex-col">
                   {/* Product Image */}

@@ -4,13 +4,13 @@ const isProduction = process.env.NODE_ENV === 'production';
 const isGitHubPages = process.env.GITHUB_PAGES === 'true';
 
 const nextConfig: NextConfig = {
-  // Solo usar export para GitHub Pages, standalone para Render
-  output: isGitHubPages ? 'export' : 'standalone',
+  // Para Render siempre usar standalone
+  output: 'standalone',
   trailingSlash: true,
   
   // Optimizaciones de imágenes
   images: {
-    unoptimized: isGitHubPages,
+    unoptimized: false,
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
@@ -74,12 +74,16 @@ const nextConfig: NextConfig = {
       },
     ]
   },
-  
-  // Solo usar basePath para GitHub Pages
-  ...(isGitHubPages && {
-    basePath: '/PCSYSTEM',
-    assetPrefix: '/PCSYSTEM/',
-  }),
+
+  // Rewrites para manejar URLs con slugs
+  async rewrites() {
+    return [
+      {
+        source: '/productos/:id/:slug*',
+        destination: '/productos/:id',
+      },
+    ]
+  },
 };
 
 // Define the Product interface
