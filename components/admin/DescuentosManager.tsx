@@ -45,6 +45,13 @@ export default function DescuentosManager({ onSuccess, onError }: Props) {
     fecha_fin: ''
   });
 
+  // Obtener fecha y hora actual en formato datetime-local
+  const getMinDateTime = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0, 16);
+  };
+
   useEffect(() => {
     fetchDescuentos();
     fetchProducts();
@@ -97,6 +104,25 @@ export default function DescuentosManager({ onSuccess, onError }: Props) {
       if (!formData.producto_id || !formData.porcentaje) {
         onError('Por favor selecciona un producto y un porcentaje');
         return;
+      }
+
+      // Validar fechas
+      const now = new Date();
+      if (formData.fecha_inicio) {
+        const fechaInicio = new Date(formData.fecha_inicio);
+        if (fechaInicio < now) {
+          onError('La fecha de inicio no puede ser anterior a la fecha actual');
+          return;
+        }
+      }
+
+      if (formData.fecha_inicio && formData.fecha_fin) {
+        const fechaInicio = new Date(formData.fecha_inicio);
+        const fechaFin = new Date(formData.fecha_fin);
+        if (fechaFin <= fechaInicio) {
+          onError('La fecha de fin debe ser posterior a la fecha de inicio');
+          return;
+        }
       }
 
       setLoading(true);
@@ -235,8 +261,8 @@ export default function DescuentosManager({ onSuccess, onError }: Props) {
                       <td className="px-6 py-4">
                         {descuento.fecha_inicio && descuento.fecha_fin ? (
                           <div className="text-xs">
-                            <div className="text-gray-400">Desde: {new Date(descuento.fecha_inicio).toLocaleDateString('es-CL')}</div>
-                            <div className="text-gray-400">Hasta: {new Date(descuento.fecha_fin).toLocaleDateString('es-CL')}</div>
+                            <div className="text-gray-400">Desde: {new Date(descuento.fecha_inicio).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })}</div>
+                            <div className="text-gray-400">Hasta: {new Date(descuento.fecha_fin).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })}</div>
                           </div>
                         ) : (
                           <span className="text-gray-500 text-xs">Sin límite</span>
@@ -299,19 +325,26 @@ export default function DescuentosManager({ onSuccess, onError }: Props) {
               <div className="p-6 space-y-6">
                 <div>
                   <label className="block text-gray-300 mb-2 font-semibold">Producto *</label>
-                  <select
-                    value={formData.producto_id}
-                    onChange={(e) => setFormData({ ...formData, producto_id: parseInt(e.target.value) })}
-                    className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
-                    disabled={!!editingDescuento}
-                  >
-                    <option value={0}>Selecciona un producto</option>
-                    {products.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.NOMBRE} - {formatPrice(product.PRECIO)}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={formData.producto_id}
+                      onChange={(e) => setFormData({ ...formData, producto_id: parseInt(e.target.value) })}
+                      className="w-full px-4 py-3 pr-10 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white appearance-none cursor-pointer"
+                      disabled={!!editingDescuento}
+                    >
+                      <option value={0}>Selecciona un producto</option>
+                      {products.map((product) => (
+                        <option key={product.id} value={product.id}>
+                          {product.NOMBRE} - {formatPrice(product.PRECIO)}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <svg className="w-5 h-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
                   {editingDescuento && (
                     <p className="text-xs text-gray-400 mt-1">No se puede cambiar el producto de un descuento existente</p>
                   )}
@@ -336,30 +369,35 @@ export default function DescuentosManager({ onSuccess, onError }: Props) {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-300 mb-2 font-semibold">Fecha Inicio (opcional)</label>
+                    <label className="block text-gray-300 mb-2 font-semibold">Fecha y Hora Inicio (opcional)</label>
                     <input
-                      type="date"
+                      type="datetime-local"
                       value={formData.fecha_inicio}
+                      min={getMinDateTime()}
                       onChange={(e) => setFormData({ ...formData, fecha_inicio: e.target.value })}
-                      className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                      className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-150 [&::-webkit-calendar-picker-indicator]:scale-150"
                     />
+                    <p className="text-xs text-gray-400 mt-1">No se permiten fechas pasadas</p>
                   </div>
 
                   <div>
-                    <label className="block text-gray-300 mb-2 font-semibold">Fecha Fin (opcional)</label>
+                    <label className="block text-gray-300 mb-2 font-semibold">Fecha y Hora Fin (opcional)</label>
                     <input
-                      type="date"
+                      type="datetime-local"
                       value={formData.fecha_fin}
+                      min={formData.fecha_inicio || getMinDateTime()}
                       onChange={(e) => setFormData({ ...formData, fecha_fin: e.target.value })}
-                      className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                      className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-150 [&::-webkit-calendar-picker-indicator]:scale-150"
+                      disabled={!formData.fecha_inicio}
                     />
+                    <p className="text-xs text-gray-400 mt-1">Debe ser posterior a la fecha de inicio</p>
                   </div>
                 </div>
 
                 {formData.fecha_inicio && formData.fecha_fin && (
                   <div className="bg-primary-500/10 border border-primary-500/30 rounded-lg p-3">
                     <p className="text-sm text-primary-300">
-                      ℹ️ El descuento estará activo desde el {new Date(formData.fecha_inicio).toLocaleDateString('es-CL')} hasta el {new Date(formData.fecha_fin).toLocaleDateString('es-CL')}
+                      ℹ️ El descuento estará activo desde el {new Date(formData.fecha_inicio).toLocaleString('es-CL')} hasta el {new Date(formData.fecha_fin).toLocaleString('es-CL')}
                     </p>
                   </div>
                 )}
