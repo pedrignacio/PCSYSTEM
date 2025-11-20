@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FiShoppingCart, 
@@ -29,6 +30,7 @@ interface CartProps {
 }
 
 export default function Cart({ isOpen, onClose }: CartProps) {
+  const router = useRouter();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   // Cargar carrito desde localStorage
@@ -184,14 +186,23 @@ export default function Cart({ isOpen, onClose }: CartProps) {
                       className="bg-dark-800 border border-dark-700 rounded-xl p-4"
                     >
                       <div className="flex gap-3">
-                        {/* Product Image */}
-                        <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-dark-700">
-                          <Image
-                            src={item.image}
-                            alt={item.name}
-                            fill
-                            className="object-cover"
-                          />
+                        {/* Product Image (fallback to logo when no image) */}
+                        <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-dark-700 flex items-center justify-center">
+                          {item.image ? (
+                            <Image
+                              src={item.image}
+                              alt={item.name}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <Image
+                              src="/logo-hero.png"
+                              alt="PCSystem Logo"
+                              fill
+                              className="object-contain p-2"
+                            />
+                          )}
                         </div>
 
                         {/* Product Info */}
@@ -266,6 +277,16 @@ export default function Cart({ isOpen, onClose }: CartProps) {
 
                 {/* Actions */}
                 <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      onClose();
+                      router.push('/checkout');
+                    }}
+                    className="w-full bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white py-3 rounded-lg font-semibold transition-all duration-300 shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60"
+                  >
+                    Finalizar compra
+                  </button>
+
                   <button
                     onClick={proceedToCheckout}
                     className="w-full bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white py-3 rounded-lg font-semibold transition-all duration-300 shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60"

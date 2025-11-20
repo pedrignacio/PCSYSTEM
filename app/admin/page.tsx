@@ -25,10 +25,15 @@ import {
   FiAlertTriangle,
   FiArrowUp,
   FiArrowDown,
+  FiTag,
+  FiGift,
+  FiPercent,
+  FiBarChart2,
 } from "react-icons/fi";
 import { apiService } from "@/lib/api";
 import Image from "next/image";
 import ImageCropper from "@/components/ImageCropper";
+import DescuentosManager from "@/components/admin/DescuentosManager";
 
 interface Product {
   id?: number;
@@ -66,6 +71,7 @@ const categories = [
 export default function AdminPage() {
   const { isAuthenticated, isLoading, logout } = useAuth();
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'productos' | 'descuentos' | 'packs' | 'cupones' | 'estadisticas'>('productos');
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -552,7 +558,7 @@ export default function AdminPage() {
           <div className="mb-8 flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">Panel de Administración</h1>
-              <p className="text-gray-400">Gestiona tus productos</p>
+              <p className="text-gray-400">Gestiona tus productos, descuentos y promociones</p>
             </div>
             <button
               onClick={logout}
@@ -563,6 +569,67 @@ export default function AdminPage() {
             </button>
           </div>
 
+          {/* Navigation Tabs */}
+          <div className="mb-8 flex flex-wrap gap-3">
+            <button
+              onClick={() => setActiveTab('productos')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-300 font-semibold ${
+                activeTab === 'productos'
+                  ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
+                  : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
+              }`}
+            >
+              <FiPackage />
+              Productos
+            </button>
+            <button
+              onClick={() => setActiveTab('descuentos')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-300 font-semibold ${
+                activeTab === 'descuentos'
+                  ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
+                  : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
+              }`}
+            >
+              <FiPercent />
+              Descuentos
+            </button>
+            <button
+              onClick={() => setActiveTab('packs')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-300 font-semibold ${
+                activeTab === 'packs'
+                  ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
+                  : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
+              }`}
+            >
+              <FiGift />
+              Packs
+            </button>
+            <button
+              onClick={() => setActiveTab('cupones')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-300 font-semibold ${
+                activeTab === 'cupones'
+                  ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
+                  : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
+              }`}
+            >
+              <FiTag />
+              Cupones
+            </button>
+            <button
+              onClick={() => setActiveTab('estadisticas')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-300 font-semibold ${
+                activeTab === 'estadisticas'
+                  ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
+                  : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
+              }`}
+            >
+              <FiBarChart2 />
+              Estadísticas
+            </button>
+          </div>
+
+          {activeTab === 'productos' && (
+            <>
           {/* Stats */}
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             <div className="bg-dark-800 border border-primary-500/30 rounded-xl p-6">
@@ -816,6 +883,40 @@ export default function AdminPage() {
               </div>
             )}
           </div>
+            </>
+          )}
+
+          {/* TODO: Add other tabs content here */}
+          {activeTab === 'descuentos' && (
+            <DescuentosManager 
+              onSuccess={showSuccess}
+              onError={showError}
+            />
+          )}
+
+          {activeTab === 'packs' && (
+            <div className="bg-dark-800 border border-dark-700 rounded-xl p-8 text-center">
+              <FiGift className="text-6xl text-primary-500 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-white mb-2">Gestión de Packs</h3>
+              <p className="text-gray-400">Esta sección estará disponible próximamente</p>
+            </div>
+          )}
+
+          {activeTab === 'cupones' && (
+            <div className="bg-dark-800 border border-dark-700 rounded-xl p-8 text-center">
+              <FiTag className="text-6xl text-primary-500 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-white mb-2">Gestión de Cupones</h3>
+              <p className="text-gray-400">Esta sección estará disponible próximamente</p>
+            </div>
+          )}
+
+          {activeTab === 'estadisticas' && (
+            <div className="bg-dark-800 border border-dark-700 rounded-xl p-8 text-center">
+              <FiBarChart2 className="text-6xl text-primary-500 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-white mb-2">Estadísticas</h3>
+              <p className="text-gray-400">Esta sección estará disponible próximamente</p>
+            </div>
+          )}
         </div>
 
         {/* Product Modal */}
