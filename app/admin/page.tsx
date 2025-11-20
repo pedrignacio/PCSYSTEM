@@ -34,6 +34,7 @@ import { apiService } from "@/lib/api";
 import Image from "next/image";
 import ImageCropper from "@/components/ImageCropper";
 import DescuentosManager from "@/components/admin/DescuentosManager";
+import PacksManager from "@/components/admin/PacksManager";
 
 interface Product {
   id?: number;
@@ -895,11 +896,10 @@ export default function AdminPage() {
           )}
 
           {activeTab === 'packs' && (
-            <div className="bg-dark-800 border border-dark-700 rounded-xl p-8 text-center">
-              <FiGift className="text-6xl text-primary-500 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-white mb-2">Gestión de Packs</h3>
-              <p className="text-gray-400">Esta sección estará disponible próximamente</p>
-            </div>
+            <PacksManager 
+              onSuccess={showSuccess}
+              onError={showError}
+            />
           )}
 
           {activeTab === 'cupones' && (
