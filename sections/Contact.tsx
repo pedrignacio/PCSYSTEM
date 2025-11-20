@@ -146,8 +146,8 @@ export default function Contact() {
                   </div>
                   <div>
                     <p className="text-gray-400 text-sm">Dirección</p>
-                    <p className="text-lg font-semibold">Floresta 3, Hualpén</p>
-                    <p className="text-gray-400">Región del Biobío</p>
+                    <p className="text-lg font-semibold">Pasaje 7 #2609 La Floresta 3</p>
+                    <p className="text-gray-400">Hualpén, Región del Biobío</p>
                   </div>
                 </div>
 
