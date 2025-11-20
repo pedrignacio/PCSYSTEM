@@ -249,6 +249,7 @@ export default function Home() {
               {/* Scroll Indicator */}
               <div className="pt-16 animate-bounce">
                 <button
+                  title="Scroll to services"
                   onClick={() => {
                     const element = document.getElementById('servicios');
                     if (element) {
