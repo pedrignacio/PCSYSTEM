@@ -30,10 +30,12 @@ import {
   FiPercent,
   FiBarChart2,
 } from "react-icons/fi";
+import { MdPointOfSale } from "react-icons/md";
 import { apiService } from "@/lib/api";
 import Image from "next/image";
 import ImageCropper from "@/components/ImageCropper";
 import DescuentosManager from "@/components/admin/DescuentosManager";
+import POSManager from "@/components/admin/POSManager";
 
 interface Product {
   id?: number;
@@ -71,7 +73,7 @@ const categories = [
 export default function AdminPage() {
   const { isAuthenticated, isLoading, logout } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'productos' | 'descuentos' | 'packs' | 'cupones' | 'estadisticas'>('productos');
+  const [activeTab, setActiveTab] = useState<'productos' | 'descuentos' | 'packs' | 'cupones' | 'estadisticas' | 'pos'>('productos');
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -626,6 +628,17 @@ export default function AdminPage() {
               <FiBarChart2 />
               Estadísticas
             </button>
+            <button
+              onClick={() => setActiveTab('pos')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-300 font-semibold ${
+                activeTab === 'pos'
+                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-green-500/50'
+                  : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
+              }`}
+            >
+              <MdPointOfSale />
+              Punto de Venta
+            </button>
           </div>
 
           {activeTab === 'productos' && (
@@ -915,6 +928,27 @@ export default function AdminPage() {
               <FiBarChart2 className="text-6xl text-primary-500 mx-auto mb-4" />
               <h3 className="text-2xl font-bold text-white mb-2">Estadísticas</h3>
               <p className="text-gray-400">Esta sección estará disponible próximamente</p>
+            </div>
+          )}
+
+          {activeTab === 'pos' && (
+            <div>
+              <div className="bg-dark-800 border border-primary-500/30 rounded-xl p-6 mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="bg-green-500/20 p-4 rounded-lg">
+                    <MdPointOfSale className="text-4xl text-green-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-1">Punto de Venta</h2>
+                    <p className="text-gray-400">Gestiona ventas del comercio físico y actualiza stock automáticamente</p>
+                  </div>
+                </div>
+              </div>
+              
+              <POSManager 
+                onSuccess={showSuccess} 
+                onError={showError} 
+              />
             </div>
           )}
         </div>
