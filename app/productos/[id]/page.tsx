@@ -141,7 +141,7 @@ export default function ProductDetailPage() {
               </p>
               <Link
                 href="/productos"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg"
+                className="inline-flex items-center gap-2 bg-linear-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg"
               >
                 <FiArrowLeft />
                 Volver a productos
@@ -281,7 +281,7 @@ export default function ProductDetailPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
       />
       <Header />
-      <main className="min-h-screen pt-24 pb-20 px-4 bg-gradient-to-br from-dark-900 via-dark-900 to-primary-900/20">
+      <main className="min-h-screen pt-24 pb-20 px-4 bg-linear-to-br from-dark-900 via-dark-900 to-primary-900/20">
         {/* Background Elements */}
         <div className="absolute top-20 right-0 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
@@ -310,7 +310,7 @@ export default function ProductDetailPage() {
             >
               {/* Main Image - Swipeable */}
               <motion.div 
-                className="relative aspect-square bg-gradient-to-br from-dark-800 via-dark-700 to-primary-900/30 rounded-2xl overflow-hidden mb-4 border-2 border-primary-500/30 group touch-pan-y"
+                className="relative aspect-square bg-linear-to-br from-dark-800 via-dark-700 to-primary-900/30 rounded-2xl overflow-hidden mb-4 border-2 border-primary-500/30 group touch-pan-y"
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.2}
@@ -330,18 +330,18 @@ export default function ProductDetailPage() {
                 {/* Skeleton Loader */}
                 {imageLoading && !isVideo(productImages[selectedImage]) && !isNoImage(productImages[selectedImage]) && (
                   <div className="absolute inset-0 z-10">
-                    <div className="absolute inset-0 bg-gradient-to-r from-dark-700 via-dark-600 to-dark-700 animate-pulse">
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-purple-500/20 animate-pulse" />
+                    <div className="absolute inset-0 bg-linear-to-r from-dark-700 via-dark-600 to-dark-700 animate-pulse">
+                      <div className="absolute inset-0 bg-linear-to-br from-primary-500/20 to-purple-500/20 animate-pulse" />
                     </div>
                     {/* Shimmer effect */}
                     <div className="absolute inset-0 overflow-hidden">
-                      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+                      <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
                     </div>
                   </div>
                 )}
                 
                 {isNoImage(productImages[selectedImage]) ? (
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-dark-800 via-dark-700 to-primary-900/30 text-gray-400">
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-linear-to-br from-dark-800 via-dark-700 to-primary-900/30 text-gray-400">
                     <svg className="w-32 h-32 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -375,15 +375,19 @@ export default function ProductDetailPage() {
                   <>
                     <button
                       onClick={prevImage}
+                      aria-label="Imagen anterior"
+                      title="Imagen anterior"
                       className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-dark-900/80 backdrop-blur-sm border border-primary-500/50 items-center justify-center text-white hover:bg-primary-500 transition-all opacity-0 group-hover:opacity-100 z-20"
                     >
-                      <FiChevronLeft className="text-2xl" />
+                      <FiChevronLeft className="text-2xl" aria-hidden="true" />
                     </button>
                     <button
                       onClick={nextImage}
+                      aria-label="Siguiente imagen"
+                      title="Siguiente imagen"
                       className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-dark-900/80 backdrop-blur-sm border border-primary-500/50 items-center justify-center text-white hover:bg-primary-500 transition-all opacity-0 group-hover:opacity-100 z-20"
                     >
-                      <FiChevronRight className="text-2xl" />
+                      <FiChevronRight className="text-2xl" aria-hidden="true" />
                     </button>
                   </>
                 )}
@@ -393,7 +397,7 @@ export default function ProductDetailPage() {
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute top-4 right-4 bg-gradient-to-r from-primary-500 to-blue-500 text-white text-sm px-4 py-2 rounded-full font-bold shadow-lg shadow-primary-500/50 z-10"
+                    className="absolute top-4 right-4 bg-linear-to-r from-primary-500 to-blue-500 text-white text-sm px-4 py-2 rounded-full font-bold shadow-lg shadow-primary-500/50 z-10"
                   >
                     ✓ En Stock
                   </motion.div>
@@ -436,7 +440,7 @@ export default function ProductDetailPage() {
                   >
                     {/* Thumbnail Skeleton */}
                     {thumbnailsLoading[idx] !== false && !isVideo(media) && !isNoImage(media) && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-dark-700 via-dark-600 to-dark-700 animate-pulse" />
+                      <div className="absolute inset-0 bg-linear-to-r from-dark-700 via-dark-600 to-dark-700 animate-pulse" />
                     )}
                     
                     {isNoImage(media) ? (
@@ -489,11 +493,11 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Price */}
-              <div className="mb-8 p-6 bg-gradient-to-br from-dark-800 to-primary-900/20 rounded-2xl border border-primary-500/30">
+              <div className="mb-8 p-6 bg-linear-to-br from-dark-800 to-primary-900/20 rounded-2xl border border-primary-500/30">
                 <div className="flex items-end justify-between">
                   <div>
                     <p className="text-sm text-gray-400 mb-1">Precio</p>
-                    <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary-400 via-primary-300 to-blue-400 bg-clip-text text-transparent">
+                    <div className="text-4xl md:text-5xl font-bold bg-linear-to-r from-primary-400 via-primary-300 to-blue-400 bg-clip-text text-transparent">
                       {formatPrice(product.PRECIO)}
                     </div>
                   </div>
@@ -523,10 +527,11 @@ export default function ProductDetailPage() {
 
               {/* Quantity Selector */}
               <div className="mb-8">
-                <label className="block text-sm font-semibold mb-3 text-gray-300">Cantidad</label>
+                <label htmlFor="quantity-input" className="block text-sm font-semibold mb-3 text-gray-300">Cantidad</label>
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    aria-label="Disminuir cantidad"
                     className="w-12 h-12 rounded-lg bg-dark-800 border-2 border-dark-700 hover:border-primary-500 hover:bg-dark-700 transition-all flex items-center justify-center text-xl font-bold"
                   >
                     -
@@ -535,6 +540,9 @@ export default function ProductDetailPage() {
                     <input
                       type="number"
                       min="1"
+                      id="quantity-input"
+                      aria-label="Cantidad de producto"
+                      placeholder="1"
                       value={quantity}
                       onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                       className="w-full text-center text-2xl font-bold bg-dark-800 border-2 border-dark-700 rounded-lg py-2 focus:border-primary-500 focus:outline-none transition-colors"
@@ -542,6 +550,7 @@ export default function ProductDetailPage() {
                   </div>
                   <button
                     onClick={() => setQuantity(quantity + 1)}
+                    aria-label="Aumentar cantidad"
                     className="w-12 h-12 rounded-lg bg-dark-800 border-2 border-dark-700 hover:border-primary-500 hover:bg-dark-700 transition-all flex items-center justify-center text-xl font-bold"
                   >
                     +
@@ -555,7 +564,7 @@ export default function ProductDetailPage() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleAddToCart}
-                  className="flex-1 flex items-center justify-center gap-3 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-6 py-4 rounded-xl transition-all duration-300 font-bold text-lg shadow-xl shadow-primary-600/50 hover:shadow-primary-500/70"
+                  className="flex-1 flex items-center justify-center gap-3 bg-linear-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-6 py-4 rounded-xl transition-all duration-300 font-bold text-lg shadow-xl shadow-primary-600/50 hover:shadow-primary-500/70"
                 >
                   <FiShoppingCart className="text-2xl" />
                   Agregar al Carrito
@@ -564,22 +573,24 @@ export default function ProductDetailPage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setIsFavorite(!isFavorite)}
+                  aria-label={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
                   className={`w-14 h-14 rounded-xl border-2 transition-all flex items-center justify-center ${
                     isFavorite
                       ? "bg-red-500 border-red-500 text-white"
                       : "bg-dark-800 border-dark-700 hover:border-primary-500 hover:bg-dark-700"
                   }`}
                 >
-                  <FiHeart className={`text-xl ${isFavorite ? "fill-current" : ""}`} />
+                  <FiHeart className={`text-xl ${isFavorite ? "fill-current" : ""}`} aria-hidden="true" />
                 </motion.button>
                 <div className="relative">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleShare}
+                    aria-label="Compartir producto"
                     className="w-14 h-14 rounded-xl bg-dark-800 border-2 border-dark-700 hover:border-primary-500 hover:bg-dark-700 transition-all flex items-center justify-center"
                   >
-                    <FiShare2 className="text-xl" />
+                    <FiShare2 className="text-xl" aria-hidden="true" />
                   </motion.button>
                   <AnimatePresence>
                     {showShareMenu && (
@@ -599,7 +610,7 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Features */}
-              <div className="grid grid-cols-3 gap-4 p-6 bg-gradient-to-br from-dark-800 to-primary-900/10 rounded-xl border border-primary-500/20">
+              <div className="grid grid-cols-3 gap-4 p-6 bg-linear-to-br from-dark-800 to-primary-900/10 rounded-xl border border-primary-500/20">
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   className="text-center p-3 rounded-lg bg-dark-900/50"
@@ -659,7 +670,7 @@ export default function ProductDetailPage() {
                 {activeTab === "description" && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 to-purple-500 rounded-t"
+                    className="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-primary-500 to-purple-500 rounded-t"
                   />
                 )}
               </button>
@@ -673,7 +684,7 @@ export default function ProductDetailPage() {
                 {activeTab === "specs" && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 to-purple-500 rounded-t"
+                    className="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-primary-500 to-purple-500 rounded-t"
                   />
                 )}
               </button>
@@ -687,7 +698,7 @@ export default function ProductDetailPage() {
                 {activeTab === "reviews" && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 to-purple-500 rounded-t"
+                    className="absolute bottom-0 left-0 right-0 h-1 bg-linear-to-r from-primary-500 to-purple-500 rounded-t"
                   />
                 )}
               </button>
@@ -701,11 +712,11 @@ export default function ProductDetailPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="bg-gradient-to-br from-dark-800/50 to-primary-900/10 rounded-2xl p-8 border border-primary-500/20"
+                className="bg-linear-to-br from-dark-800/50 to-primary-900/10 rounded-2xl p-8 border border-primary-500/20"
               >
                 {activeTab === "description" && (
                   <div>
-                    <h3 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent">
+                    <h3 className="text-3xl font-bold mb-6 bg-linear-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent">
                       Características Principales
                     </h3>
                     <p className="text-gray-300 text-lg mb-6 leading-relaxed">
@@ -716,7 +727,7 @@ export default function ProductDetailPage() {
 
                 {activeTab === "specs" && (
                   <div>
-                    <h3 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent">
+                    <h3 className="text-3xl font-bold mb-6 bg-linear-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent">
                       Especificaciones Técnicas
                     </h3>
                     <div className="p-6 bg-dark-900/50 rounded-xl border border-dark-700">
@@ -727,7 +738,7 @@ export default function ProductDetailPage() {
 
                 {activeTab === "reviews" && (
                   <div>
-                    <h3 className="text-3xl font-bold mb-6 bg-gradient-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent">
+                    <h3 className="text-3xl font-bold mb-6 bg-linear-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent">
                       Opiniones de Clientes
                     </h3>
                     <div className="text-center py-16">
@@ -783,9 +794,9 @@ export default function ProductDetailPage() {
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: idx * 0.1 }}
                       whileHover={{ y: -8, scale: 1.02 }}
-                      className="bg-gradient-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden h-full hover:border-primary-400 hover:shadow-2xl hover:shadow-primary-500/30 transition-all duration-300"
+                      className="bg-linear-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden h-full hover:border-primary-400 hover:shadow-2xl hover:shadow-primary-500/30 transition-all duration-300"
                     >
-                      <div className="relative h-48 bg-gradient-to-br from-primary-600/20 via-dark-700 to-purple-600/20 overflow-hidden">
+                      <div className="relative h-48 bg-linear-to-br from-primary-600/20 via-dark-700 to-purple-600/20 overflow-hidden">
                         {(() => {
                           const imagenes = (relatedProduct as any).IMAGENES || {};
                           const images = imagenes.images || [];
@@ -810,13 +821,13 @@ export default function ProductDetailPage() {
                             </div>
                           );
                         })()}
-                        <div className="absolute inset-0 bg-gradient-to-t from-dark-900/80 to-transparent" />
+                        <div className="absolute inset-0 bg-linear-to-t from-dark-900/80 to-transparent" />
                       </div>
                       <div className="p-5">
                         <h3 className="font-bold mb-2 group-hover:text-primary-300 transition-colors line-clamp-2 text-white">
                           {relatedProduct.NOMBRE}
                         </h3>
-                        <p className="text-xl font-bold bg-gradient-to-r from-primary-400 to-primary-300 bg-clip-text text-transparent">
+                        <p className="text-xl font-bold bg-linear-to-r from-primary-400 to-primary-300 bg-clip-text text-transparent">
                           {formatPrice(relatedProduct.PRECIO)}
                         </p>
                       </div>

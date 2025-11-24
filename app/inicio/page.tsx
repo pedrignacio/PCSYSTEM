@@ -3,6 +3,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Services from "@/sections/Services";
+import FeaturedCarousel from "@/components/FeaturedCarousel";
 import About from "@/sections/About";
 import Contact from "@/sections/Contact";
 import Location from "@/sections/Location";
@@ -137,7 +138,7 @@ export default function Home() {
       <Header />
       <main>
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-dark-900 via-dark-800 to-dark-900">
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-linear-to-br from-dark-900 via-dark-800 to-dark-900">
           {/* Animated Background Elements */}
           <div className="absolute inset-0 opacity-30">
             <div className="absolute top-20 left-10 w-96 h-96 bg-primary-500 rounded-full blur-[150px] animate-pulse" />
@@ -146,15 +147,15 @@ export default function Home() {
           </div>
 
           {/* Grid Pattern Overlay */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.03)_1px,transparent_1px)] bg-[size:50px_50px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.03)_1px,transparent_1px)] bg-size-[50px_50px]" />
           
           <div className="container mx-auto px-4 relative z-10 pt-24 pb-20">
             <div className="max-w-5xl mx-auto text-center space-y-8">
               {/* Logo o Imagen destacada */}
               <div className="mb-8 flex justify-center">
                 <div className="relative w-48 h-48 md:w-64 md:h-64">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary-500 to-purple-500 rounded-full blur-3xl opacity-40 animate-pulse" />
-                  <img 
+                  <div className="absolute inset-0 bg-linear-to-r from-primary-500 to-purple-500 rounded-full blur-3xl opacity-40 animate-pulse" />
+                  <img  
                     src="/logo-hero.png" 
                     alt="PCSystem Logo" 
                     className="relative z-10 w-full h-full object-contain drop-shadow-2xl"
@@ -164,10 +165,10 @@ export default function Home() {
 
               {/* Title */}
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-extrabold leading-tight">
-                <span className="block bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent drop-shadow-2xl">
+                <span className="block bg-linear-to-r from-white via-gray-100 to-white bg-clip-text text-transparent drop-shadow-2xl">
                   Bienvenido a
                 </span>
-                <span className="block mt-2 bg-gradient-to-r from-primary-400 via-primary-500 to-purple-500 bg-clip-text text-transparent animate-gradient">
+                <span className="block mt-2 bg-linear-to-r from-primary-400 via-primary-500 to-purple-500 bg-clip-text text-transparent animate-gradient">
                   PCSystem
                 </span>
               </h1>
@@ -216,7 +217,7 @@ export default function Home() {
                       window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
                     }
                   }}
-                  className="group px-8 py-4 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-bold rounded-xl transition-all duration-300 shadow-xl shadow-primary-500/30 hover:shadow-primary-500/50 hover:scale-105 text-lg cursor-pointer"
+                  className="group px-8 py-4 bg-linear-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-bold rounded-xl transition-all duration-300 shadow-xl shadow-primary-500/30 hover:shadow-primary-500/50 hover:scale-105 text-lg cursor-pointer"
                 >
                   <span className="flex items-center justify-center gap-2">
                     Explorar Servicios
@@ -249,6 +250,9 @@ export default function Home() {
               {/* Scroll Indicator */}
               <div className="pt-16 animate-bounce">
                 <button
+                  type="button"
+                  title="Ir a Servicios"
+                  aria-label="Ir a Servicios"
                   onClick={() => {
                     const element = document.getElementById('servicios');
                     if (element) {
@@ -268,6 +272,10 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <div className="container mx-auto px-4 py-12">
+          <FeaturedCarousel />
+        </div>
 
         <Services />
         <About />

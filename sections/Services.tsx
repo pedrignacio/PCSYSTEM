@@ -41,6 +41,12 @@ const services = [
     title: "Productos Anime y Juegos",
     description: "Merchandising de anime, videojuegos y productos coleccionables.",
     color: "from-pink-500 to-pink-600"
+  },
+  {
+    icon: <FiMonitor className="text-4xl" />,
+    title: "Desarrollo de Software",
+    description: "Desarrollo de páginas web, aplicaciones móviles y sistemas a medida.",
+    color: "from-cyan-500 to-cyan-600"
   }
 ];
 

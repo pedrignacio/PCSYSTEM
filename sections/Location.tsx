@@ -5,8 +5,8 @@ import { FiMapPin, FiClock, FiNavigation, FiPhone, FiTarget } from "react-icons/
 import { useState, useEffect } from "react";
 
 export default function Location() {
-  const address = "Pasaje 7 #2609 La Floresta 3, Hualpén";
-  const shopCoordinates = { lat: -36.7830, lng: -73.0900 }; // Coordenadas aproximadas de Hualpén
+  const address = "Pasaje 7 2609, Hualpén, Chile";
+  const shopCoordinates = { lat: -36.794370, lng: -73.109820 }; // Coordenadas actualizadas
   const googleMapsUrl = `https://www.google.com/maps?q=${encodeURIComponent(address)}`;
   const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(address)}`;
   

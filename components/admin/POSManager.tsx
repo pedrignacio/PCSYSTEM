@@ -362,7 +362,7 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
                   <div key={item.product.id} className="bg-dark-700 border border-dark-600 rounded-lg p-3">
                     <div className="flex gap-3 mb-2">
                       {/* Imagen miniatura */}
-                      <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-dark-600">
+                      <div className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-dark-600">
                         {mainImage ? (
                           <Image
                             src={mainImage}
@@ -382,7 +382,8 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
                           <p className="font-semibold text-sm flex-1 text-white truncate">{item.product.NOMBRE}</p>
                           <button
                             onClick={() => removeFromCart(item.product.id)}
-                            className="text-red-500 hover:text-red-400 ml-2 flex-shrink-0"
+                            className="text-red-500 hover:text-red-400 ml-2 shrink-0"
+                            aria-label={`Eliminar ${item.product.NOMBRE} del carrito`}
                           >
                             <FiTrash2 />
                           </button>
@@ -447,6 +448,7 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
               <button
                 onClick={() => setShowPaymentModal(false)}
                 className="text-gray-400 hover:text-white"
+                aria-label="Cerrar modal de pago"
               >
                 <FiX className="text-2xl" />
               </button>
@@ -507,8 +509,9 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
 
             {paymentMethod === 'efectivo' && (
               <div className="mb-4">
-                <label className="block text-sm font-semibold mb-2 text-white">Efectivo Recibido</label>
+                <label htmlFor="cash-received" className="block text-sm font-semibold mb-2 text-white">Efectivo Recibido</label>
                 <input
+                  id="cash-received"
                   type="number"
                   value={cashReceived}
                   onChange={(e) => setCashReceived(e.target.value)}

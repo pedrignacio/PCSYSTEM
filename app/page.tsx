@@ -21,7 +21,7 @@ export default function ProductsPage() {
   return (
     <>
       <Header />
-      <main className="pt-20">
+      <main className="pt-24 px-4 container mx-auto">
         <Suspense fallback={<ProductsLoader />}>
           <Products />
         </Suspense>

@@ -577,7 +577,7 @@ export default function AdminPage() {
               onClick={() => setActiveTab('productos')}
               className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-300 font-semibold ${
                 activeTab === 'productos'
-                  ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
+                  ? 'bg-linear-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
                   : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
               }`}
             >
@@ -588,7 +588,7 @@ export default function AdminPage() {
               onClick={() => setActiveTab('descuentos')}
               className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-300 font-semibold ${
                 activeTab === 'descuentos'
-                  ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
+                  ? 'bg-linear-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
                   : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
               }`}
             >
@@ -599,7 +599,7 @@ export default function AdminPage() {
               onClick={() => setActiveTab('packs')}
               className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-300 font-semibold ${
                 activeTab === 'packs'
-                  ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
+                  ? 'bg-linear-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
                   : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
               }`}
             >
@@ -610,7 +610,7 @@ export default function AdminPage() {
               onClick={() => setActiveTab('cupones')}
               className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-300 font-semibold ${
                 activeTab === 'cupones'
-                  ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
+                  ? 'bg-linear-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
                   : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
               }`}
             >
@@ -621,7 +621,7 @@ export default function AdminPage() {
               onClick={() => setActiveTab('estadisticas')}
               className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-300 font-semibold ${
                 activeTab === 'estadisticas'
-                  ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
+                  ? 'bg-linear-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
                   : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
               }`}
             >
@@ -632,7 +632,7 @@ export default function AdminPage() {
               onClick={() => setActiveTab('pos')}
               className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-300 font-semibold ${
                 activeTab === 'pos'
-                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-green-500/50'
+                  ? 'bg-linear-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-green-500/50'
                   : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
               }`}
             >
@@ -799,7 +799,7 @@ export default function AdminPage() {
             </button>
             <button
               onClick={handleOpenAddProduct}
-              className="flex items-center gap-2 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg"
+              className="flex items-center gap-2 bg-linear-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg"
             >
               <FiPlus />
               Agregar Producto
@@ -878,12 +878,14 @@ export default function AdminPage() {
                             <button
                               onClick={() => handleEditProduct(product)}
                               className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors"
+                              aria-label={`Editar ${product.NOMBRE}`}
                             >
                               <FiEdit />
                             </button>
                             <button
                               onClick={() => handleDeleteProduct(product.id!)}
                               className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"
+                              aria-label={`Eliminar ${product.NOMBRE}`}
                             >
                               <FiTrash2 />
                             </button>
@@ -977,6 +979,7 @@ export default function AdminPage() {
                   <button
                     onClick={() => setShowProductModal(false)}
                     className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
+                    aria-label="Cerrar modal"
                   >
                     <FiX className="text-2xl text-gray-400" />
                   </button>
@@ -1022,6 +1025,7 @@ export default function AdminPage() {
                         value={productForm.CATEGORIA}
                         onChange={(e) => setProductForm({ ...productForm, CATEGORIA: e.target.value })}
                         className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                        aria-label="Seleccionar categoría"
                       >
                         {categories.map(cat => (
                           <option key={cat} value={cat}>{cat}</option>
@@ -1155,6 +1159,7 @@ export default function AdminPage() {
                                   removeImage(idx);
                                 }}
                                 className="absolute top-2 right-2 p-1 bg-red-500 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                aria-label={`Eliminar imagen ${idx + 1}`}
                               >
                                 <FiX className="text-white" />
                               </button>
@@ -1196,6 +1201,7 @@ export default function AdminPage() {
                               <button
                                 onClick={() => removeVideo(idx)}
                                 className="absolute top-2 right-2 p-1 bg-red-500 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                aria-label={`Eliminar video ${idx + 1}`}
                               >
                                 <FiX className="text-white" />
                               </button>
@@ -1218,7 +1224,7 @@ export default function AdminPage() {
                   <button
                     onClick={handleSaveProduct}
                     disabled={loading || uploading}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white rounded-lg transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white rounded-lg transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? <FiLoader className="animate-spin" /> : <FiSave />}
                     {editingProduct ? 'Actualizar' : 'Crear'} Producto
@@ -1267,6 +1273,7 @@ export default function AdminPage() {
                   <button
                     onClick={() => setShowPositionModal(false)}
                     className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
+                    aria-label="Cerrar modal de posiciones"
                   >
                     <FiX className="text-2xl text-gray-400" />
                   </button>
@@ -1282,6 +1289,7 @@ export default function AdminPage() {
                       value={positionSearchTerm}
                       onChange={(e) => setPositionSearchTerm(e.target.value)}
                       className="w-full pl-12 pr-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                      aria-label="Filtrar productos"
                     />
                   </div>
                 </div>
@@ -1326,7 +1334,7 @@ export default function AdminPage() {
                             }`}
                           >
                             {/* Position Badge */}
-                            <div className="flex items-center justify-center w-6 h-6 bg-gradient-to-br from-primary-500 to-purple-600 rounded text-white font-bold text-xs shadow-lg shadow-primary-500/50">
+                            <div className="flex items-center justify-center w-6 h-6 bg-linear-to-br from-primary-500 to-purple-600 rounded text-white font-bold text-xs shadow-lg shadow-primary-500/50">
                               {actualIndex + 1}
                             </div>
                             
@@ -1397,7 +1405,7 @@ export default function AdminPage() {
                       }
                     }}
                     disabled={loading}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white rounded-lg transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white rounded-lg transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? <FiLoader className="animate-spin" /> : <FiCheck />}
                     Guardar Posiciones

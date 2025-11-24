@@ -46,11 +46,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Escuchar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
+        const role = session.user.email === 'pcsystemvendedor@gmail.com' ? 'vendedor' : (session.user.user_metadata?.role || 'admin');
         setUser({
           id: session.user.id,
           email: session.user.email!,
           name: session.user.user_metadata?.name || session.user.email,
-          role: session.user.user_metadata?.role || 'admin',
+          role: role,
         });
       } else {
         setUser(null);
@@ -75,11 +76,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data.user) {
+        // Asignar rol basado en el email
+        const role = email === 'pcsystemvendedor@gmail.com' ? 'vendedor' : (data.user.user_metadata?.role || 'admin');
+        
         setUser({
           id: data.user.id,
           email: data.user.email!,
           name: data.user.user_metadata?.name || data.user.email,
-          role: data.user.user_metadata?.role || 'admin',
+          role: role,
         });
         return true;
       }
