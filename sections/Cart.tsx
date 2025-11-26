@@ -12,6 +12,7 @@ import {
   FiShoppingBag
 } from 'react-icons/fi';
 import Image from 'next/image';
+import PaymentButton from '@/components/PaymentButton';
 
 interface CartItem {
   id: number;
@@ -277,22 +278,15 @@ export default function Cart({ isOpen, onClose }: CartProps) {
 
                 {/* Actions */}
                 <div className="space-y-3">
-                  <button
-                    onClick={() => {
-                      onClose();
-                      router.push('/checkout');
-                    }}
-                    className="w-full bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white py-3 rounded-lg font-semibold transition-all duration-300 shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60"
-                  >
-                    Finalizar compra
-                  </button>
+                  <PaymentButton cartItems={cartItems} />
 
                   <button
                     onClick={proceedToCheckout}
-                    className="w-full bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white py-3 rounded-lg font-semibold transition-all duration-300 shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition-all duration-300 shadow-lg shadow-green-600/40 hover:shadow-green-500/60"
                   >
-                    Finalizar Compra por WhatsApp
+                    Pedir por WhatsApp
                   </button>
+                  
                   <button
                     onClick={clearCart}
                     className="w-full bg-dark-800 hover:bg-dark-700 text-gray-300 py-2 rounded-lg font-medium transition-colors border border-dark-700"

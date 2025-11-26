@@ -86,6 +86,7 @@ export default function FeaturedCarousel() {
                 src={mainImage}
                 alt={currentProduct.NOMBRE}
                 fill
+                sizes="100vw"
                 className="object-cover blur-xl opacity-30 scale-110"
               />
               <div className="absolute inset-0 bg-linear-to-t from-dark-900 via-dark-900/80 to-transparent" />
@@ -155,6 +156,7 @@ export default function FeaturedCarousel() {
                     src={mainImage}
                     alt={currentProduct.NOMBRE}
                     fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
                     className="object-contain drop-shadow-2xl"
                     priority
                   />
