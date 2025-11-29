@@ -1,135 +1,182 @@
-PCSYSTEMS – Sistema Integral de Gestión Comercial
+🖥️ PCSYSTEM – E-commerce & POS System
+
+Solución integral para la venta y gestión de hardware y componentes de PC. Combina una tienda online moderna con un Punto de Venta (POS) para comercio físico, todo sincronizado en tiempo real.
 
 
 
 
 
-
-
-
-
-
-
-
-📌 Descripción General
-
-PCSYSTEMS es una plataforma de gestión comercial enfocada en PYMEs.
-Incluye módulos esenciales para administrar inventario, ventas, compras, proveedores, usuarios y reportes internos.
-Combina un backend sólido en .NET 8, un frontend moderno en Next.js y un panel administrativo diseñado para escalar.
 
 🚀 Características Principales
-🔐 Autenticación
+🛒 E-commerce (Cliente)
 
-Supabase Authentication
+Catálogo interactivo con filtros, búsqueda en tiempo real y paginación.
 
-Roles (Administrador / Operador)
+Carrito persistente con control de stock en vivo.
 
-Tokens JWT validados desde la API
+Integración completa con Mercado Pago (Checkout Pro + Wallet).
 
-Recuperación de contraseña
+UI responsiva basada en Glassmorphism y animaciones con Framer Motion.
 
-📦 Inventario
+Optimización de imágenes con Next.js y SEO básico.
 
-Registro y edición de productos
+🏪 Panel Admin + POS
 
-Control de stock crítico
+Dashboard para gestión de productos, stock y precios.
 
-Entradas y salidas controladas
+Sistema POS rápido para ventas presenciales.
 
-Códigos de barra opcionales
+CRUD completo con subida y recorte de imágenes.
 
-🛒 Ventas
+Selección de ubicación y direcciones mediante mapas interactivos.
 
-Emisión de boletas internas
+⚙️ Backend & API
 
-Carro de venta dinámico
+API REST con Node.js + Express.
 
-Historial filtrable
+Base de datos PostgreSQL administrada vía Supabase.
 
-Control básico de caja
+Manejo seguro de variables de entorno y CORS.
 
-🧾 Compras
+Integraciones:
 
-Registro de compras
+Mercado Pago SDK
 
-Actualización automática de stock
+Multer (subida de imágenes)
 
-Gestión de proveedores
+Nodemailer (en desarrollo)
 
-👤 Usuarios
+🛠️ Stack Tecnológico
+Frontend — /PCSYSTEM frontend
 
-Creación/edición de usuarios
+Next.js 15 (App Router) – Framework basado en React.
 
-Control de permisos por rol
-
-Listado general
-
-🧱 Tecnologías Utilizadas
-Frontend
-
-Next.js 14
-
-React
+TypeScript / JavaScript
 
 Tailwind CSS
 
-Zustand
+Framer Motion
 
-Shadcn/UI
+Leaflet / React-Leaflet
+
+Context API + Hooks
+
+Backend — /PCSYSTEM backend
+
+Node.js
+
+Express.js
+
+Supabase (PostgreSQL)
+
+Mercado Pago SDK
+
+Dotenv, Cors, Multer, Nodemailer
+
+📁 Estructura del Proyecto (Monorepo)
+PCSYSTEM/
+├── PCSYSTEM backend/        # API y lógica del servidor
+│   ├── server.js
+│   ├── schema_ecommerce.sql
+│   ├── .env
+│   └── package.json
+│
+└── PCSYSTEM frontend/       # Cliente Next.js (React)
+    ├── app/
+    │   ├── admin/
+    │   ├── checkout/
+    │   ├── productos/
+    │   └── page.tsx
+    ├── components/
+    ├── sections/
+    ├── lib/
+    └── public/
+
+🔧 Instalación
+Requisitos
+
+Node.js 18+
+
+NPM o Yarn
+
+Cuenta en Supabase
+
+Credenciales de Mercado Pago
+
+1. Clonar
+git clone https://github.com/pedrignacio/PCSYSTEM-Backend.git
+cd PCSYSTEM
+
+2. Configurar Backend
+cd "PCSYSTEM backend"
+npm install
+
+
+Archivo .env ejemplo:
+
+PORT=5000
+SUPABASE_URL=tu_url
+SUPABASE_ANON_KEY=tu_key
+DATABASE_URL=tu_connection_string
+FRONTEND_URL=http://localhost:3000
+MP_ACCESS_TOKEN=TEST-tu_access_token
+
+3. Configurar Frontend
+cd "../PCSYSTEM frontend"
+npm install
+
+
+Archivo .env.local:
+
+NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_SUPABASE_URL=tu_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_key
+NEXT_PUBLIC_MP_PUBLIC_KEY=TEST-public_key
+
+▶️ Ejecución
 
 Backend
 
-.NET 8
-
-Arquitectura de capas (Controllers, Services, Repositories)
-
-Middlewares de autenticación
-
-Endpoints REST
-
-Base de Datos
-
-PostgreSQL (Supabase)
-
-🧩 Estructura del Proyecto
-/api
-  /Controllers
-  /Services
-  /Repositories
-  /Models
-
-/frontend
-  /app
-  /components
-  /hooks
-  /store
-
-🏗️ Instalación y Ejecución
-1. Clonar repositorio
-git clone https://github.com/tuusuario/pcsystems.git
-
-2. Backend (.NET)
-cd api
-dotnet restore
-dotnet run
-
-3. Frontend (Next.js)
-cd frontend
-npm install
 npm run dev
 
-📈 Roadmap
 
- Dashboard con gráficos
+Frontend
 
- Reportes PDF
+npm run dev
 
- Control de cajas por usuario
 
- Multi-empresa
+Accede a http://localhost:3000.
 
- Integración con SII
+🛣️ Roadmap
+
+ Integración Next.js + Express
+
+ Supabase + productos + filtrado
+
+ Carrito con LocalStorage
+
+ Checkout con Mercado Pago
+
+ Login/Registro de usuarios
+
+ Dashboard Admin avanzado
+
+ Sistema de envíos con cálculo de costos
+
+ Emails transaccionales
+
+🤝 Contribuir
+
+Fork del repositorio
+
+Crear rama: git checkout -b feature/NuevaFeature
+
+Commit: git commit -m "Descripción"
+
+Push: git push origin feature/NuevaFeature
+
+Pull Request
 
 📄 Licencia
 
-Proyecto distribuido bajo licencia MIT.
+Licencia MIT — ver archivo LICENSE.
