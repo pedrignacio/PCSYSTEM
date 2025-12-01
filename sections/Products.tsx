@@ -23,16 +23,7 @@ import React from "react";
 import Cart from "./Cart";
 import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/ToastContainer';
-
-interface Product {
-  id: number;
-  NOMBRE: string;
-  DETALLE?: string;
-  PRECIO: number | string;
-  CATEGORIA: string;
-  SUBCATEGORIA?: string;
-  stock?: boolean;
-}
+import { Product } from "@/types";
 
 // Mapear las categorías de tu CSV a iconos
 const categoryMapping: { [key: string]: { icon: React.ReactElement; name: string } } = {
@@ -481,7 +472,7 @@ export default function Products() {
       >
         <button
           onClick={() => setIsCartOpen(true)}
-          className="bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white p-3 rounded-full shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60 transition-all duration-300 hover:scale-110"
+          className="bg-linear-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white p-3 rounded-full shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60 transition-all duration-300 hover:scale-110"
           aria-label="Abrir carrito de compras"
         >
           <FiShoppingCart className="text-xl" />
@@ -606,7 +597,7 @@ export default function Products() {
                 className="group cursor-pointer h-full"
                 onClick={() => router.push(getProductUrl(product))}
               >
-                <div className="bg-gradient-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden h-full hover:border-primary-400 hover:shadow-2xl hover:shadow-primary-500/30 transition-all duration-300 flex flex-col">
+                <div className="bg-linear-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden h-full hover:border-primary-400 hover:shadow-2xl hover:shadow-primary-500/30 transition-all duration-300 flex flex-col">
                   {/* Product Image */}
                   <div className="relative h-36 md:h-48 shrink-0 overflow-hidden bg-dark-900">
                     {getProductImage(product) ? (
@@ -637,16 +628,16 @@ export default function Products() {
                         <span className="text-xs">Sin foto disponible</span>
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-dark-900/60 to-transparent"></div>
+                    <div className="absolute inset-0 bg-linear-to-t from-dark-900/60 to-transparent"></div>
                     
                     {/* Category Badge */}
-                    <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-gradient-to-r from-primary-500 to-blue-500 text-white text-[8px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full font-bold shadow-lg shadow-primary-500/50 z-20">
+                    <div className="absolute top-2 right-2 md:top-3 md:right-3 bg-linear-to-r from-primary-500 to-blue-500 text-white text-[8px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full font-bold shadow-lg shadow-primary-500/50 z-20">
                       {product.SUBCATEGORIA || product.CATEGORIA}
                     </div>
                   </div>
 
                   {/* Product Info */}
-                  <div className="p-3 md:p-5 bg-gradient-to-b from-transparent to-dark-900/30 flex flex-col grow">
+                  <div className="p-3 md:p-5 bg-linear-to-b from-transparent to-dark-900/30 flex flex-col grow">
                     <h3 className="text-sm md:text-lg font-bold mb-1 md:mb-2 text-white group-hover:text-primary-300 transition-colors line-clamp-2 leading-tight h-10 md:h-14">
                       {product.NOMBRE}
                     </h3>
@@ -669,7 +660,7 @@ export default function Products() {
                         e.stopPropagation();
                         addToCart(product);
                       }}
-                      className="w-full flex items-center justify-center gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-2.5 rounded-lg transition-all duration-300 text-xs md:text-base font-semibold shadow-lg mt-auto bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white shadow-primary-600/40 hover:shadow-primary-500/60 hover:scale-105"
+                      className="w-full flex items-center justify-center gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-2.5 rounded-lg transition-all duration-300 text-xs md:text-base font-semibold shadow-lg mt-auto bg-linear-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white shadow-primary-600/40 hover:shadow-primary-500/60 hover:scale-105"
                     >
                       <FiShoppingCart className="text-sm md:text-base" />
                       <span className="hidden md:inline">Agregar al Carrito</span>
@@ -713,7 +704,7 @@ export default function Products() {
               href="https://wa.me/56989142836"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60"
+              className="inline-flex items-center gap-2 bg-linear-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60"
             >
               <FiSmartphone />
               Contactar por WhatsApp

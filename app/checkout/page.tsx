@@ -496,7 +496,7 @@ export default function CheckoutPage() {
               <button
                 onClick={handleSubmit}
                 disabled={isProcessing}
-                className="w-full bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white py-4 rounded-lg font-semibold transition-all duration-300 shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-linear-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white py-4 rounded-lg font-semibold transition-all duration-300 shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isProcessing ? 'Procesando...' : 'Confirmar Pedido'}
               </button>

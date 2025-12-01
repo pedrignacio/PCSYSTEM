@@ -160,7 +160,7 @@ export default function DescuentosManager({ onSuccess, onError }: Props) {
         </div>
         <button
           onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg"
+          className="flex items-center gap-2 bg-linear-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg"
         >
           <FiPlus />
           Nuevo Descuento
@@ -203,7 +203,7 @@ export default function DescuentosManager({ onSuccess, onError }: Props) {
                     <tr key={descuento.id} className="hover:bg-dark-700/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 relative bg-dark-700 rounded-lg overflow-hidden flex-shrink-0">
+                          <div className="w-12 h-12 relative bg-dark-700 rounded-lg overflow-hidden shrink-0">
                             {imagen ? (
                               <Image
                                 src={imagen}
@@ -247,12 +247,14 @@ export default function DescuentosManager({ onSuccess, onError }: Props) {
                           <button
                             onClick={() => handleOpenModal(descuento)}
                             className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors"
+                            aria-label="Editar descuento"
                           >
                             <FiEdit />
                           </button>
                           <button
                             onClick={() => handleDelete(descuento.id)}
                             className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"
+                            aria-label="Eliminar descuento"
                           >
                             <FiTrash2 />
                           </button>
@@ -291,6 +293,7 @@ export default function DescuentosManager({ onSuccess, onError }: Props) {
                 <button
                   onClick={() => setShowModal(false)}
                   className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
+                  aria-label="Cerrar modal"
                 >
                   <FiX className="text-2xl text-gray-400" />
                 </button>
@@ -304,6 +307,7 @@ export default function DescuentosManager({ onSuccess, onError }: Props) {
                     onChange={(e) => setFormData({ ...formData, producto_id: parseInt(e.target.value) })}
                     className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
                     disabled={!!editingDescuento}
+                    aria-label="Seleccionar producto"
                   >
                     <option value={0}>Selecciona un producto</option>
                     {products.map((product) => (
@@ -327,6 +331,7 @@ export default function DescuentosManager({ onSuccess, onError }: Props) {
                     value={formData.porcentaje}
                     onChange={(e) => setFormData({ ...formData, porcentaje: parseInt(e.target.value) })}
                     className="w-full"
+                    aria-label="Porcentaje de descuento"
                   />
                   <div className="flex justify-between text-xs text-gray-400 mt-1">
                     <span>5%</span>
@@ -342,6 +347,7 @@ export default function DescuentosManager({ onSuccess, onError }: Props) {
                       value={formData.fecha_inicio}
                       onChange={(e) => setFormData({ ...formData, fecha_inicio: e.target.value })}
                       className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                      aria-label="Fecha de inicio"
                     />
                   </div>
 
@@ -352,6 +358,7 @@ export default function DescuentosManager({ onSuccess, onError }: Props) {
                       value={formData.fecha_fin}
                       onChange={(e) => setFormData({ ...formData, fecha_fin: e.target.value })}
                       className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                      aria-label="Fecha de fin"
                     />
                   </div>
                 </div>
@@ -375,7 +382,7 @@ export default function DescuentosManager({ onSuccess, onError }: Props) {
                 <button
                   onClick={handleSave}
                   disabled={loading}
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white rounded-lg transition-all duration-300 font-semibold disabled:opacity-50"
+                  className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white rounded-lg transition-all duration-300 font-semibold disabled:opacity-50"
                 >
                   {loading ? <FiLoader className="animate-spin" /> : <FiSave />}
                   {editingDescuento ? 'Actualizar' : 'Crear'}

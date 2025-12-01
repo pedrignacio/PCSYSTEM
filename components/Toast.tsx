@@ -33,31 +33,31 @@ const Toast: React.FC<ToastProps> = ({
     switch (type) {
       case 'success':
         return {
-          bg: 'bg-gradient-to-r from-green-500 to-emerald-500',
+          bg: 'bg-linear-to-r from-green-500 to-emerald-500',
           icon: <FiCheck className="text-white" />,
           border: 'border-green-400/30'
         };
       case 'info':
         return {
-          bg: 'bg-gradient-to-r from-primary-500 to-blue-500',
+          bg: 'bg-linear-to-r from-primary-500 to-blue-500',
           icon: <FiShoppingCart className="text-white" />,
           border: 'border-primary-400/30'
         };
       case 'warning':
         return {
-          bg: 'bg-gradient-to-r from-yellow-500 to-orange-500',
+          bg: 'bg-linear-to-r from-yellow-500 to-orange-500',
           icon: <FiShoppingCart className="text-white" />,
           border: 'border-yellow-400/30'
         };
       case 'error':
         return {
-          bg: 'bg-gradient-to-r from-red-500 to-pink-500',
+          bg: 'bg-linear-to-r from-red-500 to-pink-500',
           icon: <FiX className="text-white" />,
           border: 'border-red-400/30'
         };
       default:
         return {
-          bg: 'bg-gradient-to-r from-primary-500 to-blue-500',
+          bg: 'bg-linear-to-r from-primary-500 to-blue-500',
           icon: <FiShoppingCart className="text-white" />,
           border: 'border-primary-400/30'
         };

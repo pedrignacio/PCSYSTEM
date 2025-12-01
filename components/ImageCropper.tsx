@@ -262,6 +262,7 @@ export default function ImageCropper({
               <button
                 onClick={onCancel}
                 className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
+                aria-label="Cerrar"
               >
                 <FiX className="text-2xl text-gray-400" />
               </button>
@@ -327,7 +328,7 @@ export default function ImageCropper({
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white rounded-lg transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-3 bg-linear-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white rounded-lg transition-all duration-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? (
                 <>
@@ -358,6 +359,7 @@ export default function ImageCropper({
               onClick={() => setCurrentPreviewSize((prev) => (prev - 1 + previewSizes.length) % previewSizes.length)}
               disabled={isSaving}
               className="p-2 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Tamaño anterior"
             >
               <FiChevronLeft className="text-white" />
             </button>
@@ -373,6 +375,7 @@ export default function ImageCropper({
               onClick={() => setCurrentPreviewSize((prev) => (prev + 1) % previewSizes.length)}
               disabled={isSaving}
               className="p-2 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Siguiente tamaño"
             >
               <FiChevronRight className="text-white" />
             </button>
@@ -392,7 +395,7 @@ export default function ImageCropper({
                 maxWidth: '100%'
               }}
             >
-              <div className="bg-gradient-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden shadow-2xl">
+              <div className="bg-linear-to-br from-dark-800 via-dark-800 to-primary-900/20 backdrop-blur-sm border-2 border-primary-500/30 rounded-2xl overflow-hidden shadow-2xl">
                 {/* Product Image Preview */}
                 <div 
                   className="relative overflow-hidden"
@@ -420,16 +423,16 @@ export default function ImageCropper({
                     </div>
                   )}
                   
-                  <div className="absolute inset-0 bg-gradient-to-t from-dark-900/60 to-transparent"></div>
+                  <div className="absolute inset-0 bg-linear-to-t from-dark-900/60 to-transparent"></div>
                   
                   {/* Category Badge */}
-                  <div className="absolute top-2 right-2 bg-gradient-to-r from-primary-500 to-blue-500 text-white text-[8px] px-1.5 py-0.5 rounded-full font-bold shadow-lg shadow-primary-500/50 z-20">
+                  <div className="absolute top-2 right-2 bg-linear-to-r from-primary-500 to-blue-500 text-white text-[8px] px-1.5 py-0.5 rounded-full font-bold shadow-lg shadow-primary-500/50 z-20">
                     Preview
                   </div>
                 </div>
 
                 {/* Product Info */}
-                <div className="p-3 bg-gradient-to-b from-transparent to-dark-900/30">
+                <div className="p-3 bg-linear-to-b from-transparent to-dark-900/30">
                   <h3 className="text-sm font-bold mb-1 text-white line-clamp-2 leading-tight h-10">
                     Nombre del Producto
                   </h3>
@@ -440,7 +443,10 @@ export default function ImageCropper({
                     </span>
                   </div>
 
-                  <button className="w-full flex items-center justify-center gap-1 px-2 py-2 rounded-lg transition-all duration-300 text-xs font-semibold shadow-lg bg-gradient-to-r from-primary-600 to-purple-600 text-white">
+                  <button 
+                    className="w-full flex items-center justify-center gap-1 px-2 py-2 rounded-lg transition-all duration-300 text-xs font-semibold shadow-lg bg-linear-to-r from-primary-600 to-purple-600 text-white"
+                    aria-label="Agregar al carrito"
+                  >
                     <FiShoppingCart className="text-sm" />
                     <span>Agregar</span>
                   </button>
@@ -458,6 +464,7 @@ export default function ImageCropper({
                         ? 'bg-primary-500 w-6' 
                         : 'bg-dark-600 hover:bg-dark-500'
                     }`}
+                    aria-label={`Ver tamaño ${previewSizes[idx].name}`}
                   />
                 ))}
               </div>

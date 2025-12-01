@@ -139,7 +139,7 @@ export default function Location() {
 
                     {/* Shimmer effect */}
                     <div className="absolute inset-0 overflow-hidden">
-                      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
+                      <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
                     </div>
                   </div>
                 </div>
@@ -192,7 +192,7 @@ export default function Location() {
                   className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
                     loadingLocation
                       ? 'bg-gray-600 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:scale-105'
+                      : 'bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:scale-105'
                   }`}
                 >
                   <FiTarget className={loadingLocation ? 'animate-spin' : ''} />
