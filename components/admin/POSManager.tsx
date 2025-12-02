@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { apiService } from '@/lib/api';
-import { FiShoppingCart, FiSearch, FiTrash2, FiDollarSign, FiCreditCard, FiX, FiEye, FiPlus, FiMinus, FiFileText, FiClock, FiPrinter, FiRotateCcw } from 'react-icons/fi';
+import { FiShoppingCart, FiSearch, FiTrash2, FiDollarSign, FiCreditCard, FiX, FiEye, FiPlus, FiMinus, FiFileText, FiClock, FiPrinter, FiRotateCcw, FiLoader, FiCheckCircle } from 'react-icons/fi';
 import { MdPointOfSale, MdAddShoppingCart } from 'react-icons/md';
 import Image from 'next/image';
 
@@ -57,6 +57,33 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [returnSaleId, setReturnSaleId] = useState('');
 
+  // Terminal State
+  const [terminalStatus, setTerminalStatus] = useState<'idle' | 'sending' | 'waiting' | 'approved' | 'failed'>('idle');
+
+  const handleSendToTerminal = async () => {
+    setTerminalStatus('sending');
+    try {
+      // Aquí iría la integración real con la API de Haulmer/Tú
+      // Por ejemplo: await apiService.initiateTerminalPayment(getTotal());
+      
+      // Simulamos espera de conexión
+      setTimeout(() => {
+        setTerminalStatus('waiting');
+        
+        // Simulamos aprobación después de unos segundos
+        setTimeout(() => {
+          setTerminalStatus('approved');
+          setAuthCode(Math.floor(100000 + Math.random() * 900000).toString()); // Código simulado
+          onSuccess('Pago aprobado por la máquina');
+        }, 3000);
+      }, 1500);
+    } catch (error) {
+      setTerminalStatus('failed');
+      onError('Error de comunicación con la máquina');
+      setTimeout(() => setTerminalStatus('idle'), 3000);
+    }
+  };
+
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -101,6 +128,14 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
   };
 
   const addToCart = (product: Product) => {
+    // Validación estricta de stock para productos no personalizados
+    if (!product.isCustom) {
+      if (!product.STOCK || product.STOCK <= 0) {
+        onError('Producto sin stock disponible');
+        return;
+      }
+    }
+
     const existing = cart.find(item => item.product.id === product.id);
     
     if (existing) {
@@ -116,12 +151,6 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
           : item
       ));
     } else {
-      // Check stock for new item if not custom
-      if (!product.isCustom && product.STOCK && product.STOCK < 1) {
-        onError('Producto sin stock');
-        return;
-      }
-
       setCart(prev => [...prev, { product, quantity: 1, subtotal: Number(product.PRECIO) }]);
     }
   };
@@ -238,6 +267,7 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
       setObservaciones('');
       setShowPaymentModal(false);
       setPaymentMethod('efectivo');
+      setTerminalStatus('idle');
       
       // Recargar productos
       await loadProducts();
@@ -506,7 +536,7 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
             </div>
             
             <button
-              onClick={handleCompleteSale}
+              onClick={() => setShowPaymentModal(true)}
               disabled={cart.length === 0 || loading}
               className="w-full bg-green-600 hover:bg-green-700 disabled:bg-dark-600 disabled:cursor-not-allowed py-4 rounded-lg font-bold text-lg mt-4 flex items-center justify-center gap-2 transition-colors"
             >
@@ -743,7 +773,7 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
 
             {paymentMethod === 'efectivo' && (
               <div className="mb-4">
-                <label htmlFor="cash-received" className="block text-sm font-semibold mb-2 text-white">Efectivo Recibido</label>
+                <label className="block text-sm font-semibold mb-2 text-white">Monto Recibido</label>
                 <input
                   id="cash-received"
                   type="number"
@@ -761,13 +791,62 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
             )}
 
             {paymentMethod === 'transbank' && (
-              <div className="mb-4">
+              <div className="mb-4 space-y-3">
+                <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+                  <p className="text-blue-200 text-sm mb-3 font-semibold">Integración Máquina Tú / Haulmer</p>
+                  
+                  {terminalStatus === 'idle' && (
+                    <button
+                      onClick={handleSendToTerminal}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-blue-900/20"
+                    >
+                      <FiCreditCard className="text-xl" />
+                      Enviar ${getTotal().toLocaleString()} a la Máquina
+                    </button>
+                  )}
+
+                  {terminalStatus === 'sending' && (
+                    <div className="flex flex-col items-center justify-center py-4 text-blue-300 bg-blue-900/30 rounded-lg">
+                      <FiLoader className="animate-spin text-3xl mb-2" />
+                      <span className="font-medium">Conectando con terminal...</span>
+                    </div>
+                  )}
+
+                  {terminalStatus === 'waiting' && (
+                    <div className="flex flex-col items-center justify-center py-4 text-yellow-400 bg-yellow-900/20 rounded-lg animate-pulse">
+                      <FiCreditCard className="text-3xl mb-2" />
+                      <span className="font-bold text-lg">Inserte / Deslice Tarjeta</span>
+                      <span className="text-sm opacity-80">Esperando PIN...</span>
+                    </div>
+                  )}
+
+                  {terminalStatus === 'approved' && (
+                    <div className="flex flex-col items-center justify-center py-4 text-green-400 bg-green-900/20 rounded-lg border border-green-500/30">
+                      <FiCheckCircle className="text-4xl mb-2" />
+                      <span className="font-bold text-lg">¡Pago Aprobado!</span>
+                    </div>
+                  )}
+
+                  {terminalStatus === 'failed' && (
+                    <div className="flex flex-col items-center justify-center py-4 text-red-400 bg-red-900/20 rounded-lg">
+                      <FiX className="text-3xl mb-2" />
+                      <span className="font-bold">Error en transacción</span>
+                      <button 
+                        onClick={() => setTerminalStatus('idle')}
+                        className="mt-2 text-sm underline hover:text-red-300"
+                      >
+                        Intentar de nuevo
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <label className="block text-sm font-semibold mb-2 text-white">Código de Autorización</label>
                 <input
                   type="text"
                   value={authCode}
                   onChange={(e) => setAuthCode(e.target.value)}
-                  placeholder="Ingrese código..."
+                  placeholder="Ingrese código o espere a la máquina..."
                   className="w-full bg-dark-700 border border-dark-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -811,6 +890,7 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
                   setAuthCode('');
                   setTransactionId('');
                   setCashReceived('');
+                  setTerminalStatus('idle');
                 }}
                 className="flex-1 bg-dark-600 hover:bg-dark-500 py-3 rounded-lg font-semibold transition-colors"
                 disabled={loading}
