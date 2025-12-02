@@ -15,13 +15,15 @@ import {
   FiCheck,
   FiAlertCircle,
   FiLoader,
-  FiX
+  FiX,
+  FiUsers
 } from "react-icons/fi";
 import { MdPointOfSale } from "react-icons/md";
 import { apiService } from "@/lib/api";
 import DescuentosManager from "@/components/admin/DescuentosManager";
 import POSManager from "@/components/admin/POSManager";
 import ProductManager from "@/components/admin/ProductManager";
+import UserManager from "@/components/admin/UserManager";
 import ProductForm from "@/components/admin/ProductForm";
 import { Product } from "@/types";
 
@@ -45,7 +47,7 @@ const categories = [
 export default function AdminPage() {
   const { isAuthenticated, isLoading, logout } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'productos' | 'descuentos' | 'packs' | 'cupones' | 'estadisticas' | 'pos'>('productos');
+  const [activeTab, setActiveTab] = useState<'productos' | 'descuentos' | 'packs' | 'cupones' | 'estadisticas' | 'pos' | 'usuarios'>('productos');
   
   // Product State
   const [products, setProducts] = useState<Product[]>([]);
@@ -357,6 +359,17 @@ export default function AdminPage() {
               <MdPointOfSale />
               Punto de Venta
             </button>
+            <button
+              onClick={() => setActiveTab('usuarios')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-300 font-semibold ${
+                activeTab === 'usuarios'
+                  ? 'bg-linear-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/50'
+                  : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
+              }`}
+            >
+              <FiUsers />
+              Usuarios
+            </button>
           </div>
 
           {activeTab === 'productos' && (
@@ -421,6 +434,13 @@ export default function AdminPage() {
                 onError={showError} 
               />
             </div>
+          )}
+
+          {activeTab === 'usuarios' && (
+            <UserManager 
+              onSuccess={showSuccess}
+              onError={showError}
+            />
           )}
         </div>
 
