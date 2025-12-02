@@ -328,12 +328,23 @@ export default function ProductForm({
                 value={formData.stock}
                 onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
                 className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
-                min="0"
+                placeholder="0"
                 aria-label="Stock del producto"
               />
             </div>
             <div>
-              <label className="block text-gray-300 mb-2 font-semibold">Posición</label>
+              <label className="block text-gray-300 mb-2 font-semibold">Código de Barras</label>
+              <input
+                type="text"
+                value={formData.codigo_barra || ''}
+                onChange={(e) => setFormData({ ...formData, codigo_barra: e.target.value })}
+                className="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:outline-none focus:border-primary-500 text-white"
+                placeholder="Escanea o ingresa el código"
+                aria-label="Código de barras"
+              />
+            </div>
+            <div>
+              <label className="block text-gray-300 mb-2 font-semibold">Categoría</label>
               <input
                 type="number"
                 value={formData.POSICION}

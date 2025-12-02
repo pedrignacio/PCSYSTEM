@@ -10,6 +10,7 @@ export interface Product {
   mainImageIndex?: number;
   stock?: number; // Note: In DB it might be STOCK (uppercase) based on backend code, but frontend uses lowercase in interface? Need to verify.
   STOCK?: number; // Adding both for safety until standardized
+  codigo_barra?: string;
   POSICION?: number;
   NUM_VENTAS?: number;
   imageCropData?: { [key: number]: any };

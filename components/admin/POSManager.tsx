@@ -14,7 +14,7 @@ interface Product {
   SUBCATEGORIA?: string;
   IMAGENES?: any;
   STOCK?: number;
-  CODIGO_BARRAS?: string;
+  codigo_barra?: string;
   isCustom?: boolean;
 }
 
@@ -90,7 +90,7 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
     e.preventDefault();
     if (!barcodeInput.trim()) return;
 
-    const product = products.find(p => p.CODIGO_BARRAS === barcodeInput);
+    const product = products.find(p => p.codigo_barra === barcodeInput);
     if (product) {
       addToCart(product);
       setBarcodeInput('');
