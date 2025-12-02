@@ -399,8 +399,8 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
                   <p className="text-green-500 font-bold">${parseFloat(String(product.PRECIO)).toLocaleString()}</p>
                   <div className="flex justify-between items-center text-xs text-gray-400 mt-1">
                     <span>Stock: {product.STOCK || 0}</span>
-                    {product.CODIGO_BARRAS && (
-                      <span className="bg-dark-600 px-1 rounded text-[10px]">{product.CODIGO_BARRAS}</span>
+                    {product.codigo_barra && (
+                      <span className="bg-dark-600 px-1 rounded text-[10px]">{product.codigo_barra}</span>
                     )}
                   </div>
                 </div>
