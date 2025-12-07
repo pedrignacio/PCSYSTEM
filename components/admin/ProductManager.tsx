@@ -5,6 +5,7 @@ import {
 } from "react-icons/fi";
 import Image from "next/image";
 import { Product } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProductManagerProps {
   products: Product[];
@@ -25,6 +26,7 @@ export default function ProductManager({
   onAdd,
   onOpenPositions
 }: ProductManagerProps) {
+  const { user } = useAuth();
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -217,20 +219,24 @@ export default function ProductManager({
           </button>
         </div>
         
-        <button
-          onClick={onOpenPositions}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg"
-        >
-          <FiList />
-          Ver Posiciones
-        </button>
-        <button
-          onClick={onAdd}
-          className="flex items-center gap-2 bg-linear-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg"
-        >
-          <FiPlus />
-          Agregar Producto
-        </button>
+        {user?.role === 'admin' && (
+          <>
+            <button
+              onClick={onOpenPositions}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg"
+            >
+              <FiList />
+              Ver Posiciones
+            </button>
+            <button
+              onClick={onAdd}
+              className="flex items-center gap-2 bg-linear-to-r from-primary-600 to-purple-600 hover:from-primary-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg"
+            >
+              <FiPlus />
+              Agregar Producto
+            </button>
+          </>
+        )}
         </div>
       </div>
 
@@ -256,7 +262,9 @@ export default function ProductManager({
                   <th className="px-6 py-4 text-left text-gray-300 font-semibold">Categoría</th>
                   <th className="px-6 py-4 text-left text-gray-300 font-semibold">Precio</th>
                   <th className="px-6 py-4 text-left text-gray-300 font-semibold">Stock</th>
-                  <th className="px-6 py-4 text-right text-gray-300 font-semibold">Acciones</th>
+                  {user?.role === 'admin' && (
+                    <th className="px-6 py-4 text-right text-gray-300 font-semibold">Acciones</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-dark-700">
@@ -300,24 +308,26 @@ export default function ProductManager({
                         {(product as any).STOCK || 0}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => onEdit(product)}
-                          className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors"
-                          aria-label={`Editar ${product.NOMBRE}`}
-                        >
-                          <FiEdit />
-                        </button>
-                        <button
-                          onClick={() => onDelete(product.id!)}
-                          className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"
-                          aria-label={`Eliminar ${product.NOMBRE}`}
-                        >
-                          <FiTrash2 />
-                        </button>
-                      </div>
-                    </td>
+                    {user?.role === 'admin' && (
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => onEdit(product)}
+                            className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors"
+                            aria-label={`Editar ${product.NOMBRE}`}
+                          >
+                            <FiEdit />
+                          </button>
+                          <button
+                            onClick={() => onDelete(product.id!)}
+                            className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"
+                            aria-label={`Eliminar ${product.NOMBRE}`}
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

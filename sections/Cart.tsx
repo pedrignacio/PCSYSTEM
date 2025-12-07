@@ -102,21 +102,10 @@ export default function Cart({ isOpen, onClose }: CartProps) {
     }).format(price);
   };
 
-  // Proceder al checkout (WhatsApp)
+  // Proceder al checkout (Redirigir al Wizard)
   const proceedToCheckout = () => {
-    if (cartItems.length === 0) return;
-
-    const message = `¡Hola! Me interesa comprar los siguientes productos:\n\n${cartItems
-      .map(
-        item =>
-          `• ${item.name} - Cantidad: ${item.quantity} - Precio: ${formatPrice(
-            item.price * item.quantity
-          )}`
-      )
-      .join('\n')}\n\n*Total: ${formatPrice(getTotalPrice())}*\n\n¿Podrían confirmarme disponibilidad y forma de pago?`;
-
-    const whatsappUrl = `https://wa.me/56989142836?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    onClose();
+    router.push('/checkout');
   };
 
   return (
@@ -278,13 +267,13 @@ export default function Cart({ isOpen, onClose }: CartProps) {
 
                 {/* Actions */}
                 <div className="space-y-3">
-                  <PaymentButton cartItems={cartItems} />
+                  {/* <PaymentButton cartItems={cartItems} /> */}
 
                   <button
                     onClick={proceedToCheckout}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition-all duration-300 shadow-lg shadow-green-600/40 hover:shadow-green-500/60"
+                    className="w-full bg-primary-600 hover:bg-primary-500 text-white py-3 rounded-lg font-semibold transition-all duration-300 shadow-lg shadow-primary-600/40 hover:shadow-primary-500/60"
                   >
-                    Pedir por WhatsApp
+                    Finalizar Compra
                   </button>
                   
                   <button

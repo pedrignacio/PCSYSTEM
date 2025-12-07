@@ -24,6 +24,7 @@ import DescuentosManager from "@/components/admin/DescuentosManager";
 import POSManager from "@/components/admin/POSManager";
 import ProductManager from "@/components/admin/ProductManager";
 import UserManager from "@/components/admin/UserManager";
+import DailySales from "@/components/admin/DailySales";
 import ProductForm from "@/components/admin/ProductForm";
 import { Product } from "@/types";
 
@@ -408,11 +409,10 @@ export default function AdminPage() {
           )}
 
           {activeTab === 'estadisticas' && (
-            <div className="bg-dark-800 border border-dark-700 rounded-xl p-8 text-center">
-              <FiBarChart2 className="text-6xl text-primary-500 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-white mb-2">Estadísticas</h3>
-              <p className="text-gray-400">Esta sección estará disponible próximamente</p>
-            </div>
+            <DailySales 
+              onSuccess={showSuccess}
+              onError={showError}
+            />
           )}
 
           {activeTab === 'pos' && (

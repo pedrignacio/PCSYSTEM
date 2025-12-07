@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { apiService } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { FiShoppingCart, FiSearch, FiTrash2, FiDollarSign, FiCreditCard, FiX, FiEye, FiPlus, FiMinus, FiFileText, FiClock, FiPrinter, FiRotateCcw, FiLoader, FiCheckCircle } from 'react-icons/fi';
 import { MdPointOfSale, MdAddShoppingCart } from 'react-icons/md';
 import Image from 'next/image';
@@ -30,6 +31,7 @@ interface POSManagerProps {
 }
 
 export default function POSManager({ onSuccess, onError }: POSManagerProps) {
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -354,6 +356,7 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
                 className="w-full bg-dark-700 border border-dark-600 rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
+            {user?.role === 'admin' && (
             <button
               onClick={() => setShowManualItem(true)}
               className="bg-dark-700 hover:bg-dark-600 border border-dark-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
@@ -362,6 +365,7 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
               <MdAddShoppingCart className="text-xl" />
               <span className="hidden sm:inline">Manual</span>
             </button>
+            )}
             <button
               onClick={handleReprint}
               disabled={!lastSaleId}
@@ -370,6 +374,7 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
             >
               <FiPrinter className="text-xl" />
             </button>
+            {user?.role === 'admin' && (
             <button
               onClick={() => setShowReturnModal(true)}
               className="bg-dark-700 hover:bg-dark-600 border border-dark-600 text-red-400 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
@@ -377,6 +382,7 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
             >
               <FiRotateCcw className="text-xl" />
             </button>
+            )}
           </div>
         </div>
 
