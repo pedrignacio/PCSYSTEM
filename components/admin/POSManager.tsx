@@ -61,27 +61,58 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
 
   // Terminal State
   const [terminalStatus, setTerminalStatus] = useState<'idle' | 'sending' | 'waiting' | 'approved' | 'failed'>('idle');
+  const [paymentToken, setPaymentToken] = useState<string | null>(null);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, []);
 
   const handleSendToTerminal = async () => {
     setTerminalStatus('sending');
     try {
-      // Aquí iría la integración real con la API de Haulmer/Tú
-      // Por ejemplo: await apiService.initiateTerminalPayment(getTotal());
+      const total = getTotal();
+      const result = await apiService.initiateTerminalPayment(total);
       
-      // Simulamos espera de conexión
-      setTimeout(() => {
-        setTerminalStatus('waiting');
-        
-        // Simulamos aprobación después de unos segundos
-        setTimeout(() => {
-          setTerminalStatus('approved');
-          setAuthCode(Math.floor(100000 + Math.random() * 900000).toString()); // Código simulado
-          onSuccess('Pago aprobado por la máquina');
-        }, 3000);
-      }, 1500);
-    } catch (error) {
+      // La respuesta v1 de Haulmer devuelve un token o id
+      const token = result.token || result.id;
+      if (!token) {
+        throw new Error('No se recibió token de Haulmer');
+      }
+      setPaymentToken(token);
+      setTerminalStatus('waiting');
+      
+      // Polling cada 3 segundos para consultar el estado
+      pollingRef.current = setInterval(async () => {
+        try {
+          const status = await apiService.checkTerminalPaymentStatus(token);
+          console.log("Haulmer Status:", status);
+          
+          // Verificar respuesta según estado de Haulmer
+          // status.status puede ser: 'Approved', 'Rejected', 'Pending', 'Processing', etc.
+          if (status.status === 'Approved' || status.responseCode === '00') {
+             if (pollingRef.current) clearInterval(pollingRef.current);
+             setTerminalStatus('approved');
+             setAuthCode(status.authorizationCode || status.approvalCode || '000000');
+             onSuccess('Pago aprobado por la máquina');
+          } else if (status.status === 'Rejected' || status.status === 'Failed' || status.status === 'Cancelled') {
+             // Fallo
+             if (pollingRef.current) clearInterval(pollingRef.current);
+             setTerminalStatus('failed');
+             onError(`Pago rechazado: ${status.responseMessage || status.message || 'Error desconocido'}`);
+          }
+          // Si es 'Pending' o 'Processing', seguimos esperando
+          
+        } catch (err) {
+          console.error("Polling error", err);
+        }
+      }, 3000);
+      
+    } catch (error: any) {
       setTerminalStatus('failed');
-      onError('Error de comunicación con la máquina');
+      onError(error.message || 'Error de comunicación con la máquina');
       setTimeout(() => setTerminalStatus('idle'), 3000);
     }
   };
