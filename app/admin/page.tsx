@@ -48,7 +48,7 @@ const categories = [
 export default function AdminPage() {
   const { isAuthenticated, isLoading, logout } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'productos' | 'descuentos' | 'packs' | 'cupones' | 'estadisticas' | 'pos' | 'usuarios'>('productos');
+  const [activeTab, setActiveTab] = useState<'productos' | 'descuentos' | 'packs' | 'ventas' | 'pos' | 'usuarios'>('productos');
   
   // Product State
   const [products, setProducts] = useState<Product[]>([]);
@@ -249,7 +249,7 @@ export default function AdminPage() {
 
   return (
     <>
-      <main className="min-h-screen pt-8 pb-20 px-4 bg-dark-900">
+      <main className="min-h-screen pt-8 pb-20 px-4 bg-dark-900 light-theme">
         <div className="container mx-auto max-w-7xl">
           {/* Success/Error Messages */}
           <AnimatePresence>
@@ -328,26 +328,15 @@ export default function AdminPage() {
               Packs
             </button>
             <button
-              onClick={() => setActiveTab('cupones')}
+              onClick={() => setActiveTab('ventas')}
               className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-300 font-semibold ${
-                activeTab === 'cupones'
-                  ? 'bg-linear-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
-                  : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
-              }`}
-            >
-              <FiTag />
-              Cupones
-            </button>
-            <button
-              onClick={() => setActiveTab('estadisticas')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all duration-300 font-semibold ${
-                activeTab === 'estadisticas'
+                activeTab === 'ventas'
                   ? 'bg-linear-to-r from-primary-600 to-purple-600 text-white shadow-lg shadow-primary-500/50'
                   : 'bg-dark-800 text-gray-300 hover:bg-dark-700 border border-dark-700'
               }`}
             >
               <FiBarChart2 />
-              Estadísticas
+              Historial Ventas
             </button>
             <button
               onClick={() => setActiveTab('pos')}
@@ -400,15 +389,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {activeTab === 'cupones' && (
-            <div className="bg-dark-800 border border-dark-700 rounded-xl p-8 text-center">
-              <FiTag className="text-6xl text-primary-500 mx-auto mb-4" />
-              <h3 className="text-2xl font-bold text-white mb-2">Gestión de Cupones</h3>
-              <p className="text-gray-400">Esta sección estará disponible próximamente</p>
-            </div>
-          )}
-
-          {activeTab === 'estadisticas' && (
+          {activeTab === 'ventas' && (
             <DailySales 
               onSuccess={showSuccess}
               onError={showError}

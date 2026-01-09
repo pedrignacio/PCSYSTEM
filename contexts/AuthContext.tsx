@@ -29,16 +29,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Verificar sesión actual
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email!,
-          name: session.user.user_metadata?.name || session.user.email,
-          role: session.user.user_metadata?.role || 'admin',
-        });
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.warn("Error de sesión:", error.message);
+          // Si el token es inválido, limpiamos la sesión
+          if (error.message.includes("Refresh Token") || error.message.includes("Invalid Refresh Token")) {
+             await supabase.auth.signOut();
+          }
+          setUser(null);
+        } else if (session?.user) {
+          // Lógica de roles consistente con onAuthStateChange
+          const role = session.user.email === 'pcsystemvendedor@gmail.com' ? 'vendedor' : (session.user.user_metadata?.role || 'admin');
+          
+          setUser({
+            id: session.user.id,
+            email: session.user.email!,
+            name: session.user.user_metadata?.name || session.user.email,
+            role: role,
+          });
+        }
+      } catch (error) {
+        console.error("Error inesperado verificando sesión:", error);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     checkSession();

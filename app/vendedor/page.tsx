@@ -132,7 +132,7 @@ export default function VendedorPage() {
 
   return (
     <>
-      <main className="min-h-screen pt-8 pb-20 px-4 bg-dark-900">
+      <main className="min-h-screen pt-8 pb-20 px-4 bg-dark-900 light-theme">
         <div className="container mx-auto max-w-7xl">
           {/* Messages */}
           <AnimatePresence>
