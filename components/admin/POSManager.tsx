@@ -328,11 +328,7 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
     }
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/ventas/${returnSaleId}/cancel`, {
-        method: 'POST'
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Error al anular venta');
+      await apiService.cancelSale(returnSaleId);
       
       onSuccess('Venta anulada y stock restaurado');
       setShowReturnModal(false);
