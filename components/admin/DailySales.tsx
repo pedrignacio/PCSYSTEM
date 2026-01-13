@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiService } from '@/lib/api';
-import { FiCalendar, FiDollarSign, FiCreditCard, FiList, FiLoader } from 'react-icons/fi';
+import { FiCalendar, FiDollarSign, FiList, FiLoader, FiXCircle } from 'react-icons/fi';
 
 interface SaleDetail {
   id: string;
@@ -27,6 +27,7 @@ interface DailySalesProps {
 export default function DailySales({ onSuccess, onError }: DailySalesProps) {
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(false);
+  const [cancellingSaleId, setCancellingSaleId] = useState<string | null>(null);
   const [stats, setStats] = useState({
     total: 0,
     count: 0,
@@ -51,6 +52,22 @@ export default function DailySales({ onSuccess, onError }: DailySalesProps) {
       onError(error.message || 'Error cargando ventas del día');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancelSale = async (saleId: string) => {
+    const confirmed = window.confirm('¿Seguro que deseas anular esta venta? Esto restaurará el stock.');
+    if (!confirmed) return;
+
+    try {
+      setCancellingSaleId(saleId);
+      await apiService.cancelSale(saleId);
+      onSuccess('Venta anulada y stock restaurado');
+      await loadDailySales();
+    } catch (error: any) {
+      onError(error?.message || 'Error anulando la venta');
+    } finally {
+      setCancellingSaleId(null);
     }
   };
 
@@ -145,6 +162,7 @@ export default function DailySales({ onSuccess, onError }: DailySalesProps) {
                   <th className="px-6 py-3">Detalle Productos</th>
                   <th className="px-6 py-3 text-right">Total (IVA inc.)</th>
                   <th className="px-6 py-3 text-center">Pago</th>
+                  <th className="px-6 py-3 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-dark-700">
@@ -182,6 +200,19 @@ export default function DailySales({ onSuccess, onError }: DailySalesProps) {
                           'bg-purple-500/20 text-purple-400'}`}>
                         {sale.metodo_pago.toUpperCase()}
                       </span>
+                    </td>
+
+                    <td className="px-6 py-4 text-center">
+                      <button
+                        type="button"
+                        onClick={() => handleCancelSale(sale.id)}
+                        disabled={cancellingSaleId === sale.id}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-red-500/15 text-red-300 hover:bg-red-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        title="Anular venta"
+                      >
+                        <FiXCircle />
+                        {cancellingSaleId === sale.id ? 'Anulando...' : 'Anular'}
+                      </button>
                     </td>
                   </tr>
                 ))}
