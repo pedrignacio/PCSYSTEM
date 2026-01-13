@@ -438,6 +438,7 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
                         src={mainImage}
                         alt={product.NOMBRE}
                         fill
+                        unoptimized
                         className="object-cover"
                         sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       />
@@ -508,6 +509,7 @@ export default function POSManager({ onSuccess, onError }: POSManagerProps) {
                             src={mainImage}
                             alt={item.product.NOMBRE}
                             fill
+                            unoptimized
                             className="object-cover"
                             sizes="64px"
                           />

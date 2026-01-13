@@ -282,6 +282,8 @@ export default function ProductManager({
                               src={mainImage}
                               alt={product.NOMBRE}
                               fill
+                              unoptimized
+                              sizes="64px"
                               className="object-cover"
                             />
                           ) : (
