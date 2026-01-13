@@ -1,6 +1,19 @@
+"use client";
+
 import Link from 'next/link';
+import { useEffect } from 'react';
 
 export default function PagoExito() {
+  useEffect(() => {
+    try {
+      localStorage.setItem('cart', JSON.stringify([]));
+      localStorage.setItem('savedItems', JSON.stringify([]));
+      window.dispatchEvent(new CustomEvent('cartUpdated'));
+    } catch {
+      // noop
+    }
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-dark-900 text-white p-4">
       <div className="bg-dark-800 p-8 rounded-2xl border border-green-500/30 text-center max-w-md shadow-2xl shadow-green-500/10">

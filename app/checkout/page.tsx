@@ -748,7 +748,11 @@ export default function CheckoutPage() {
                   formData.paymentMethod === 'mercadopago' ? (
                     <div className="-mt-4">
                       <PaymentButton cartItems={[
-                        ...cartItems,
+                        ...cartItems.map((item) => ({
+                          ...item,
+                          // Aplicar descuento (si existe) a los productos para que el total en MP coincida.
+                          price: discount > 0 ? Math.max(0, Math.round(item.price * (1 - discount / 100))) : item.price,
+                        })),
                         ...(getShippingCost() > 0 ? [{
                           id: 999999,
                           name: "Costo de Envío",
@@ -779,8 +783,10 @@ export default function CheckoutPage() {
               </div>
 
               <p className="text-xs text-gray-500 text-center mt-4">
-                {currentStep === 3 
-                  ? 'Al confirmar, serás redirigido a WhatsApp para finalizar.' 
+                {currentStep === 3
+                  ? (formData.paymentMethod === 'mercadopago'
+                      ? 'Al continuar, se abrirá Mercado Pago para finalizar el pago.'
+                      : 'Al confirmar, serás redirigido a WhatsApp para finalizar.')
                   : 'Podrás revisar tu pedido antes de pagar.'}
               </p>
             </motion.div>
